@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-05-25
+
+### Fixed
+- The bar didn't drop after `/compact`. Claude Code writes a
+  `{ type: "system", subtype: "compact_boundary" }` marker into the
+  transcript at compact time, but our backwards walk would sail past it
+  and pick up the *pre-compact* usage block — leaving the bar pinned at
+  the old value. The transcript reader now stops at the most recent
+  `compact_boundary` and reports 0 until a fresh post-compact assistant
+  turn lands, so the bar visibly resets the moment you run `/compact`.
+
 ## [0.1.2] - 2026-05-25
 
 ### Added

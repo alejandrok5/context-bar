@@ -1,0 +1,5 @@
+{"type":"user","message":{"role":"user","content":"hi"}}
+{"type":"assistant","message":{"role":"assistant","usage":{"input_tokens":250,"cache_creation_input_tokens":1500,"cache_read_input_tokens":410000,"output_tokens":80}}}
+{"type":"system","subtype":"compact_boundary","content":"Conversation compacted","compactMetadata":{"trigger":"manual","preTokens":68327}}
+{"type":"user","message":{"role":"user","content":"first real msg after compact"}}
+{"type":"assistant","message":{"role":"assistant","usage":{"input_tokens":50,"cache_creation_input_tokens":35000,"cache_read_input_tokens":0,"output_tokens":120}}}

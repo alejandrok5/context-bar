@@ -73,3 +73,34 @@ test('findLatestUsageTokens: file with no usage anywhere returns 0', () => {
   const fixturePath = path.join(FIXTURES, 'no-usage.jsonl');
   assert.equal(findLatestUsageTokens(fixturePath), 0);
 });
+
+test('findLatestUsageTokens: compact_boundary with no post-compact usage returns 0', () => {
+  // Regression: after /compact, the OLD pre-compact usage block must not
+  // be returned. Bar should show 0% (Smart Zone) until the next turn
+  // writes a fresh usage block.
+  const fixturePath = path.join(FIXTURES, 'post-compact-no-usage.jsonl');
+  assert.equal(findLatestUsageTokens(fixturePath), 0);
+});
+
+test('findLatestUsageTokens: usage AFTER compact_boundary is honored', () => {
+  // Once a fresh post-compact assistant turn exists, use its usage.
+  const fixturePath = path.join(FIXTURES, 'post-compact-with-usage.jsonl');
+  // 50 + 35000 + 0 = 35050
+  assert.equal(findLatestUsageTokens(fixturePath), 35_050);
+});
+
+test('findLatestUsageTokens: stops at most-recent compact boundary, ignoring earlier ones', () => {
+  // Two compactions: oldest usage 500k, then compact, then 200k, then compact, no usage after.
+  const fs = require('fs');
+  const os = require('os');
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-test-'));
+  const p = path.join(tmpDir, 'multi-compact.jsonl');
+  fs.writeFileSync(p, [
+    '{"type":"assistant","message":{"usage":{"input_tokens":1,"cache_read_input_tokens":499999}}}',
+    '{"type":"system","subtype":"compact_boundary","compactMetadata":{"trigger":"manual"}}',
+    '{"type":"assistant","message":{"usage":{"input_tokens":1,"cache_read_input_tokens":199999}}}',
+    '{"type":"system","subtype":"compact_boundary","compactMetadata":{"trigger":"auto"}}',
+    '{"type":"user","message":{"content":"hi"}}',
+  ].join('\n') + '\n');
+  assert.equal(findLatestUsageTokens(p), 0);
+});

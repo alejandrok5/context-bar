@@ -98,6 +98,30 @@ test('cli: model id without [1m] but usage >200k auto-detects 1M window', () => 
   assert.doesNotMatch(res.stdout, /\b2\d\d%/);
 });
 
+test('cli: /compact boundary resets the bar even if pre-compact usage exists', () => {
+  // Regression: pre-compact transcripts had usage blocks before /compact;
+  // the bar must NOT report those stale numbers after /compact.
+  const fs = require('fs');
+  const os = require('os');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-compact-'));
+  const transcript = path.join(tmp, 't.jsonl');
+  fs.writeFileSync(transcript, [
+    '{"type":"assistant","message":{"usage":{"input_tokens":250,"cache_creation_input_tokens":1500,"cache_read_input_tokens":410000}}}',
+    '{"type":"system","subtype":"compact_boundary","compactMetadata":{"trigger":"manual","preTokens":68327}}',
+    '{"type":"user","message":{"content":"next"}}',
+  ].join('\n') + '\n');
+  const payload = JSON.stringify({
+    transcript_path: transcript,
+    model: { id: 'claude-opus-4-7', display_name: 'Opus' },
+  });
+  const res = runCli(payload);
+  assert.equal(res.status, 0);
+  // Bar must read 0% (or near-zero), NOT the pre-compact 411k value.
+  assert.match(res.stdout, /\b0%/);
+  assert.match(res.stdout, /Smart Zone/);
+  assert.doesNotMatch(res.stdout, /4\d\dk\//);  // no 411k or similar
+});
+
 test('cli: linked worktree shown as branch@worktree', () => {
   const fs = require('fs');
   const os = require('os');

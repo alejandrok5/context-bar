@@ -10,6 +10,14 @@ function sumUsage(usage) {
   return input + cacheCreate + cacheRead;
 }
 
+function isCompactBoundary(obj) {
+  return (
+    obj &&
+    obj.type === 'system' &&
+    obj.subtype === 'compact_boundary'
+  );
+}
+
 function findLatestUsageTokens(transcriptPath) {
   if (!transcriptPath) return 0;
   let content;
@@ -30,10 +38,17 @@ function findLatestUsageTokens(transcriptPath) {
     } catch {
       continue;
     }
+
+    // Stop at the most recent /compact. Any usage block BEFORE this
+    // boundary reflects pre-compact context and is misleading.
+    // Returning 0 here makes the bar show ~0% until the next assistant
+    // turn writes a fresh post-compact usage block.
+    if (isCompactBoundary(obj)) return 0;
+
     const usage = obj && obj.message && obj.message.usage;
     if (usage) return sumUsage(usage);
   }
   return 0;
 }
 
-module.exports = { findLatestUsageTokens, sumUsage };
+module.exports = { findLatestUsageTokens, sumUsage, isCompactBoundary };

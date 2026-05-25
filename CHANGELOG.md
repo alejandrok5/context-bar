@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-05-25
+
+### Fixed
+- Window-size detection no longer assumes the 200k default when the host
+  passes a model id without the `[1m]` suffix. The Claude Code transcript
+  actually reports `model: "claude-opus-4-7"` for 1M-tier sessions, which
+  caused readings like `205% · 410k/200k`. The detector now also reads
+  Claude Code's `exceeds_200k_tokens` flag and auto-grows the window to 1M
+  whenever observed usage exceeds 200k.
+
 ## [0.1.0] - 2026-05-25
 
 ### Added

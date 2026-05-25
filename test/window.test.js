@@ -32,6 +32,37 @@ test('detectWindowSize: invalid env override is ignored', () => {
   assert.equal(detectWindowSize('claude-opus-4-7', '-100'), 200_000);
 });
 
+test('detectWindowSize: usedTokens > 200k forces 1M window', () => {
+  // The real-world bug: Claude Code passes model.id="claude-opus-4-7"
+  // (no [1m] suffix) for 1M-tier models. Auto-grow when usage exceeds 200k.
+  assert.equal(detectWindowSize('claude-opus-4-7', null, { usedTokens: 410_000 }), 1_000_000);
+  assert.equal(detectWindowSize('claude-opus-4-7', null, { usedTokens: 200_001 }), 1_000_000);
+});
+
+test('detectWindowSize: usedTokens at or below 200k stays at 200k default', () => {
+  assert.equal(detectWindowSize('claude-opus-4-7', null, { usedTokens: 199_999 }), 200_000);
+  assert.equal(detectWindowSize('claude-opus-4-7', null, { usedTokens: 200_000 }), 200_000);
+  assert.equal(detectWindowSize('claude-opus-4-7', null, { usedTokens: 0 }), 200_000);
+});
+
+test('detectWindowSize: exceeds200k flag forces 1M window', () => {
+  assert.equal(detectWindowSize('claude-opus-4-7', null, { exceeds200k: true }), 1_000_000);
+  // Even when usedTokens is small (stale flag or fresh-after-compact reading),
+  // the host's explicit signal wins.
+  assert.equal(detectWindowSize('claude-opus-4-7', null, { exceeds200k: true, usedTokens: 50_000 }), 1_000_000);
+});
+
+test('detectWindowSize: env override beats all auto signals', () => {
+  assert.equal(
+    detectWindowSize('claude-opus-4-7', '500000', { usedTokens: 800_000, exceeds200k: true }),
+    500_000,
+  );
+});
+
+test('detectWindowSize: [1m] suffix still wins over no signals', () => {
+  assert.equal(detectWindowSize('claude-opus-4-7[1m]', null, {}), 1_000_000);
+});
+
 test('prettyModelName: prefers displayName when given', () => {
   assert.equal(prettyModelName('claude-opus-4-7[1m]', 'Opus'), 'Opus');
 });

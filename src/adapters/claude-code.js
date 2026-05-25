@@ -23,8 +23,12 @@ function parse(stdin) {
     transcriptPath: stdin.transcript_path || null,
     cwd,
     costUsd: typeof cost.total_cost_usd === 'number' ? cost.total_cost_usd : null,
+    // Claude Code passes this flag once the session has exceeded 200k tokens.
+    // It's our most reliable signal that the model is on the 1M-context tier,
+    // since `model.id` typically does NOT carry the [1m] suffix.
+    exceeds200k: stdin.exceeds_200k_tokens === true,
     // usedTokens left undefined → orchestrator will compute from transcript
-    // windowSize left undefined → orchestrator will detect from modelId
+    // windowSize left undefined → orchestrator will detect from signals
   };
 }
 

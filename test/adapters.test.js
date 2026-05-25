@@ -50,6 +50,23 @@ test('claude-code: parse handles missing cost gracefully', () => {
   assert.equal(out.costUsd, null);
 });
 
+test('claude-code: parse passes through exceeds_200k_tokens flag', () => {
+  const out = claudeCode.parse({
+    transcript_path: CLAUDE_FIXTURE,
+    model: { id: 'claude-opus-4-7' },
+    exceeds_200k_tokens: true,
+  });
+  assert.equal(out.exceeds200k, true);
+});
+
+test('claude-code: exceeds200k defaults to false when flag missing', () => {
+  const out = claudeCode.parse({
+    transcript_path: CLAUDE_FIXTURE,
+    model: { id: 'claude-opus-4-7' },
+  });
+  assert.equal(out.exceeds200k, false);
+});
+
 // -------- opencode --------
 
 test('opencode: detect matches session-with-model payloads', () => {

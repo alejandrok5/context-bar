@@ -73,6 +73,42 @@ test('cli: missing transcript path still exits 0', () => {
   assert.match(res.stdout, /Smart Zone/);
 });
 
+test('cli: model id without [1m] but usage >200k auto-detects 1M window', () => {
+  // Regression: real Claude Code transcripts have model="claude-opus-4-7"
+  // (no [1m] suffix) even on the 1M-context tier. usedTokens > 200k must
+  // bump the window to 1M, not produce a >100% reading.
+  const path = require('path');
+  const fs = require('fs');
+  const os = require('os');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-cli-'));
+  const transcript = path.join(tmp, 't.jsonl');
+  fs.writeFileSync(transcript,
+    '{"type":"assistant","message":{"usage":{"input_tokens":100,"cache_creation_input_tokens":1000,"cache_read_input_tokens":410000}}}\n'
+  );
+  const payload = JSON.stringify({
+    transcript_path: transcript,
+    model: { id: 'claude-opus-4-7', display_name: 'Opus 4.7' },
+  });
+  const res = runCli(payload);
+  assert.equal(res.status, 0);
+  // 411,100 / 1,000,000 = 41% (Dumb Zone). Must NOT be >100%.
+  assert.match(res.stdout, /41%/);
+  assert.match(res.stdout, /411k\/1M/);
+  assert.doesNotMatch(res.stdout, /\b1\d\d%/);  // no >=100% reading
+  assert.doesNotMatch(res.stdout, /\b2\d\d%/);
+});
+
+test('cli: exceeds_200k_tokens flag forces 1M window even with small usage', () => {
+  const payload = JSON.stringify({
+    transcript_path: '/no/such/path.jsonl',
+    model: { id: 'claude-opus-4-7' },
+    exceeds_200k_tokens: true,
+  });
+  const res = runCli(payload);
+  assert.equal(res.status, 0);
+  assert.match(res.stdout, /\/1M/);
+});
+
 test('cli: env adapter with CONTEXT_BAR_* vars produces meter', () => {
   const res = runCli('', {
     CONTEXT_BAR_USED_TOKENS: '120000',

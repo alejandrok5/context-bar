@@ -30,11 +30,18 @@ async function run({ env = process.env, stdin } = {}) {
   const partial = adapter.parse(parsed, env) || {};
 
   const modelId = partial.modelId || null;
-  const windowSize = partial.windowSize
-    || detectWindowSize(modelId, env.CONTEXT_BAR_WINDOW_TOKENS);
+  // Compute used tokens FIRST so we can use them to detect the window size.
+  // Most hosts don't expose a reliable window-size field, but the actual
+  // token count is an unambiguous lower bound — if we already exceed 200k,
+  // we know the window can't be 200k.
   const usedTokens = (partial.usedTokens != null)
     ? partial.usedTokens
     : findLatestUsageTokens(partial.transcriptPath);
+  const windowSize = partial.windowSize
+    || detectWindowSize(modelId, env.CONTEXT_BAR_WINDOW_TOKENS, {
+      usedTokens,
+      exceeds200k: partial.exceeds200k,
+    });
   const modelDisplayName = partial.modelDisplayName
     || prettyModelName(modelId, partial.modelDisplayName);
   const branch = partial.branch != null

@@ -1,0 +1,5 @@
+{"type":"user","message":{"role":"user","content":"hello"}}
+{"type":"assistant","message":{"role":"assistant","content":"hi","usage":{"input_tokens":120,"cache_creation_input_tokens":3000,"cache_read_input_tokens":380000,"output_tokens":50}}}
+{"type":"tool_result","content":"ok"}
+{"type":"user","message":{"role":"user","content":"more"}}
+{"type":"assistant","message":{"role":"assistant","content":"reply","usage":{"input_tokens":250,"cache_creation_input_tokens":1500,"cache_read_input_tokens":410000,"output_tokens":80}}}

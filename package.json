@@ -1,0 +1,35 @@
+{
+  "name": "context-bar",
+  "version": "0.1.0",
+  "description": "Smart Zone / Dumb Zone context-window meter for Claude Code, OpenCode, Codex, and other AI coding agents",
+  "bin": {
+    "context-bar": "bin/context-bar.js"
+  },
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test",
+    "smoke": "echo '{}' | node bin/context-bar.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "opencode",
+    "codex",
+    "statusline",
+    "status-line",
+    "context-window",
+    "context-rot",
+    "smart-zone",
+    "llm",
+    "ai-coding"
+  ],
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ]
+}

@@ -1,4 +1,4 @@
-# context-bar
+# Context Bar
 
 > A Smart Zone / Dumb Zone context-window meter for Claude Code, OpenCode, Codex, and other AI coding agents.
 

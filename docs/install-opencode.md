@@ -7,7 +7,7 @@
 ## 1. Clone the repo
 
 ```bash
-git clone https://github.com/<your-user>/context-bar.git ~/context-bar
+git clone https://github.com/alejandrok5/context-bar.git ~/context-bar
 ```
 
 ## 2. Wire it into OpenCode

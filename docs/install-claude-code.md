@@ -5,7 +5,7 @@ Claude Code reads a `statusLine` block from `~/.claude/settings.json`.
 ## 1. Clone the repo
 
 ```bash
-git clone https://github.com/<your-user>/context-bar.git ~/context-bar
+git clone https://github.com/alejandrok5/context-bar.git ~/context-bar
 ```
 
 ## 2. Edit `~/.claude/settings.json`

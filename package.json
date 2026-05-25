@@ -14,6 +14,14 @@
     "node": ">=18"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alejandrok5/context-bar.git"
+  },
+  "homepage": "https://github.com/alejandrok5/context-bar",
+  "bugs": {
+    "url": "https://github.com/alejandrok5/context-bar/issues"
+  },
   "keywords": [
     "claude-code",
     "opencode",

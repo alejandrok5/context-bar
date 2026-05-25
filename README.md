@@ -21,7 +21,7 @@ When you're talking to a long-context model, the first ~30% of the window is the
 ## Install
 
 ```bash
-git clone https://github.com/<your-user>/context-bar.git ~/context-bar
+git clone https://github.com/alejandrok5/context-bar.git ~/context-bar
 ```
 
 That's it — no `npm install`, no build step. The script in `bin/context-bar.js` is ready to run.

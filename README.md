@@ -15,7 +15,7 @@ When you're talking to a long-context model, the first ~30% of the window is the
 - **Multi-host** — adapters for Claude Code, OpenCode, Codex, and a generic env-var fallback.
 - **Zero dependencies** — pure Node.js stdlib (`fs`, `child_process`). Node 18+.
 - **Auto window detection** — 1M for models tagged `[1m]`, 200k otherwise. Overridable.
-- **Extras** — model name, raw tokens, git branch, session cost.
+- **Extras** — model name, raw tokens, git branch (annotated with worktree name when you're in a linked worktree, e.g. `feat-x@worktree_3`), session cost.
 - **Crash-safe** — any unexpected input degrades to a fallback line instead of breaking your status bar.
 
 ## Install

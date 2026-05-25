@@ -98,6 +98,47 @@ test('cli: model id without [1m] but usage >200k auto-detects 1M window', () => 
   assert.doesNotMatch(res.stdout, /\b2\d\d%/);
 });
 
+test('cli: linked worktree shown as branch@worktree', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const cp = require('child_process');
+  const main = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-cli-main-'));
+  cp.execSync('git init -q -b main', { cwd: main });
+  cp.execSync('git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init', { cwd: main });
+  const wt = path.join(path.dirname(main), `wt-${path.basename(main)}-feat`);
+  cp.execSync(`git worktree add -q -b feat-branch "${wt}"`, { cwd: main });
+
+  const payload = JSON.stringify({
+    transcript_path: '/no/such/path.jsonl',
+    cwd: wt,
+    model: { id: 'claude-opus-4-7', display_name: 'Opus' },
+  });
+  const res = runCli(payload);
+  assert.equal(res.status, 0);
+  // Should show `feat-branch@<wt-basename>`
+  const wtName = path.basename(wt);
+  assert.match(res.stdout, new RegExp(`feat-branch@${wtName.replace(/[.+*?^$()[\]{}|\\]/g, '\\$&')}`));
+});
+
+test('cli: main checkout shows only branch (no @worktree suffix)', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const cp = require('child_process');
+  const main = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-cli-solo-'));
+  cp.execSync('git init -q -b solo', { cwd: main });
+  cp.execSync('git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init', { cwd: main });
+
+  const payload = JSON.stringify({
+    transcript_path: '/no/such/path.jsonl',
+    cwd: main,
+    model: { id: 'claude-opus-4-7', display_name: 'Opus' },
+  });
+  const res = runCli(payload);
+  assert.equal(res.status, 0);
+  assert.match(res.stdout, /\bsolo\b/);
+  assert.doesNotMatch(res.stdout, /solo@/);
+});
+
 test('cli: exceeds_200k_tokens flag forces 1M window even with small usage', () => {
   const payload = JSON.stringify({
     transcript_path: '/no/such/path.jsonl',

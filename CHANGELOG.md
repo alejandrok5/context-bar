@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-05-25
+
+### Added
+- Worktree detection. When `cwd` resolves to a linked git worktree (not
+  the main checkout), the branch field is annotated as
+  `branch@worktree-name`. The main checkout still shows just `branch`.
+
 ## [0.1.1] - 2026-05-25
 
 ### Fixed

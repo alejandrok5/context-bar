@@ -6,7 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
-const { getBranch } = require('../src/git');
+const { getBranch, getBranchAndWorktree } = require('../src/git');
 
 function tmpRepo() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-git-'));
@@ -34,4 +34,38 @@ test('getBranch: returns null for null/missing cwd', () => {
 
 test('getBranch: returns null for nonexistent dir', () => {
   assert.equal(getBranch('/no/such/dir/anywhere'), null);
+});
+
+test('getBranchAndWorktree: main checkout reports worktree=null', () => {
+  const dir = tmpRepo();
+  const r = getBranchAndWorktree(dir);
+  assert.equal(r.branch, 'test-branch');
+  assert.equal(r.worktree, null);
+});
+
+test('getBranchAndWorktree: linked worktree reports its directory name', () => {
+  const main = tmpRepo();
+  // Create a linked worktree at a sibling path.
+  const wtPath = path.join(path.dirname(main), `wt-${path.basename(main)}-extra`);
+  execSync(`git worktree add -q -b extra-branch "${wtPath}"`, { cwd: main });
+
+  const r = getBranchAndWorktree(wtPath);
+  assert.equal(r.branch, 'extra-branch');
+  assert.equal(r.worktree, path.basename(wtPath));
+
+  // The main checkout should still report worktree=null even though
+  // a linked worktree now exists alongside it.
+  const mainR = getBranchAndWorktree(main);
+  assert.equal(mainR.branch, 'test-branch');
+  assert.equal(mainR.worktree, null);
+});
+
+test('getBranchAndWorktree: non-repo returns both null', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-nogit-'));
+  assert.deepEqual(getBranchAndWorktree(dir), { branch: null, worktree: null });
+});
+
+test('getBranchAndWorktree: null/missing cwd returns both null', () => {
+  assert.deepEqual(getBranchAndWorktree(null), { branch: null, worktree: null });
+  assert.deepEqual(getBranchAndWorktree(''), { branch: null, worktree: null });
 });

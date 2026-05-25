@@ -2,7 +2,7 @@
 
 const { pickAdapter } = require('./detect');
 const { findLatestUsageTokens } = require('./transcript');
-const { getBranch } = require('./git');
+const { getBranchAndWorktree } = require('./git');
 const { render } = require('./render');
 const { detectWindowSize, prettyModelName } = require('./window');
 
@@ -44,9 +44,13 @@ async function run({ env = process.env, stdin } = {}) {
     });
   const modelDisplayName = partial.modelDisplayName
     || prettyModelName(modelId, partial.modelDisplayName);
-  const branch = partial.branch != null
-    ? partial.branch
-    : getBranch(partial.cwd);
+  const { branch: detectedBranch, worktree: detectedWorktree } =
+    getBranchAndWorktree(partial.cwd);
+  const branch = partial.branch != null ? partial.branch : detectedBranch;
+  const worktree = partial.worktree != null ? partial.worktree : detectedWorktree;
+  // Combine for the render layer: `main` for the primary checkout,
+  // `main@worktree_3` when we're in a linked worktree.
+  const branchDisplay = branch && worktree ? `${branch}@${worktree}` : branch;
 
   const payload = {
     modelId,
@@ -54,7 +58,7 @@ async function run({ env = process.env, stdin } = {}) {
     windowSize,
     usedTokens,
     costUsd: partial.costUsd,
-    branch,
+    branch: branchDisplay,
     cwd: partial.cwd,
     transcriptPath: partial.transcriptPath,
   };

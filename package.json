@@ -9,7 +9,8 @@
   "scripts": {
     "test": "node --test",
     "smoke": "echo '{}' | node bin/context-bar.js",
-    "lint": "eslint src test"
+    "lint": "eslint src test",
+    "bench": "node scripts/bench.js"
   },
   "engines": {
     "node": ">=18"

@@ -10,11 +10,16 @@ function readStdin() {
   return new Promise((resolve) => {
     if (process.stdin.isTTY) return resolve('');
     let data = '';
+    let timer = null;
+    const done = () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      resolve(data);
+    };
     process.stdin.setEncoding('utf8');
     process.stdin.on('data', (chunk) => { data += chunk; });
-    process.stdin.on('end', () => resolve(data));
-    process.stdin.on('error', () => resolve(data));
-    setTimeout(() => resolve(data), 500);
+    process.stdin.on('end', done);
+    process.stdin.on('error', done);
+    timer = setTimeout(done, 500);
   });
 }
 

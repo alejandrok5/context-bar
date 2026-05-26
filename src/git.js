@@ -8,6 +8,11 @@ const path = require('path');
 //   worktree: basename of the linked worktree directory if cwd is a
 //             linked worktree, otherwise null. The main checkout always
 //             reports worktree=null even if other worktrees exist.
+//
+// We deliberately don't memoize across calls. The status-line script is
+// invoked as a fresh, short-lived process by the host on every turn, so
+// an in-process cache would have nothing to hit. Persisting a cache to
+// disk would cost more than the ~10-30ms it would save.
 function getBranchAndWorktree(cwd) {
   if (!cwd) return { branch: null, worktree: null };
   let out;

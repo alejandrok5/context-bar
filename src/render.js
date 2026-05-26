@@ -37,7 +37,22 @@ function buildBar(pct, color, useColor, useAscii = false) {
   return `[${ANSI[color]}${filledStr}${ANSI.reset}${ANSI.dim}${emptyStr}${ANSI.reset}]`;
 }
 
+// Color precedence:
+//   1. FORCE_COLOR overrides everything (npm/supports-color convention).
+//      FORCE_COLOR=0/false/"" disables; any other value enables.
+//   2. NO_COLOR / CONTEXT_BAR_NO_COLOR disable.
+//   3. Default: enabled.
+//
+// We do NOT auto-disable on process.stdout.isTTY === false. The primary
+// host (Claude Code) consumes the output through a captured pipe, where
+// isTTY is false, but ANSI codes are expected and rendered correctly.
+// Disabling color in that case would break the default experience.
+// Users who pipe into a non-ANSI consumer can opt out with NO_COLOR.
 function shouldUseColor(env) {
+  const fc = env.FORCE_COLOR;
+  if (fc != null && fc !== '') {
+    return !(fc === '0' || fc === 'false');
+  }
   if (env.NO_COLOR != null && env.NO_COLOR !== '') return false;
   if (env.CONTEXT_BAR_NO_COLOR != null && env.CONTEXT_BAR_NO_COLOR !== '') return false;
   return true;

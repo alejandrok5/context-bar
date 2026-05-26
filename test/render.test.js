@@ -92,6 +92,16 @@ test('shouldUseColor: CONTEXT_BAR_NO_COLOR also disables', () => {
   assert.equal(shouldUseColor({ CONTEXT_BAR_NO_COLOR: '1' }), false);
 });
 
+test('shouldUseColor: FORCE_COLOR=1 wins over NO_COLOR', () => {
+  assert.equal(shouldUseColor({ FORCE_COLOR: '1', NO_COLOR: '1' }), true);
+  assert.equal(shouldUseColor({ FORCE_COLOR: '2' }), true);
+});
+
+test('shouldUseColor: FORCE_COLOR=0 disables even without NO_COLOR', () => {
+  assert.equal(shouldUseColor({ FORCE_COLOR: '0' }), false);
+  assert.equal(shouldUseColor({ FORCE_COLOR: 'false' }), false);
+});
+
 test('render: full payload produces expected segments', () => {
   const out = render({
     modelId: 'claude-opus-4-7[1m]',

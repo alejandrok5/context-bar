@@ -13,6 +13,12 @@ function detect() {
 
 function parse(_stdin, env) {
   const e = env || {};
+  // Prefer process.cwd() over PWD: the PWD env var is shell-set and can
+  // disagree with the actual working directory after `cd -P` or some
+  // wrapper invocations. PWD is kept as a last-resort fallback for
+  // environments where process.cwd() throws (deleted cwd, etc.).
+  let pcwd = null;
+  try { pcwd = process.cwd(); } catch { /* unreadable cwd */ }
   return {
     source: NAME,
     modelId: e.CONTEXT_BAR_MODEL_ID || null,
@@ -20,7 +26,7 @@ function parse(_stdin, env) {
     usedTokens: parseIntOrNull(e.CONTEXT_BAR_USED_TOKENS),
     windowSize: parseIntOrNull(e.CONTEXT_BAR_WINDOW_TOKENS),
     costUsd: parseFloatOrNull(e.CONTEXT_BAR_COST_USD),
-    cwd: e.CONTEXT_BAR_CWD || e.PWD || null,
+    cwd: e.CONTEXT_BAR_CWD || pcwd || e.PWD || null,
     transcriptPath: e.CONTEXT_BAR_TRANSCRIPT_PATH || null,
   };
 }

@@ -67,7 +67,10 @@ function parse(stdin, env) {
     parseFloatOrNull(e.CODEX_COST_USD),
   );
 
-  const cwd = pickString(stdin.cwd, codex.cwd, e.CODEX_CWD, e.PWD);
+  // process.cwd() is preferred over the PWD env var: PWD is shell-set and
+  // doesn't update when a parent ran `cd -P` (physical resolve), so it can
+  // point at a stale logical path.
+  const cwd = pickString(stdin.cwd, codex.cwd, e.CODEX_CWD, safeCwd(), e.PWD);
   const transcriptPath = pickString(stdin.transcript_path, codex.transcript_path, e.CODEX_TRANSCRIPT_PATH);
 
   return {
@@ -80,6 +83,10 @@ function parse(stdin, env) {
     cwd,
     transcriptPath,
   };
+}
+
+function safeCwd() {
+  try { return process.cwd(); } catch { return null; }
 }
 
 function parseIntOrNull(v) {

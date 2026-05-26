@@ -94,3 +94,11 @@ test('prettyModelName: null/empty returns null', () => {
   assert.equal(prettyModelName(null), null);
   assert.equal(prettyModelName(''), null);
 });
+
+test('prettyModelName: dated id with [1m] suffix still parses to family + version', () => {
+  // Real Claude Code transcripts sometimes pass dated model ids like
+  // claude-opus-4-7-20260101[1m]. The [1m] suffix is stripped, the date
+  // tail is ignored, and the family/version pair is preserved.
+  assert.equal(prettyModelName('claude-opus-4-7-20260101[1m]'), 'Opus 4.7');
+  assert.equal(prettyModelName('claude-sonnet-4-6-20260315'), 'Sonnet 4.6');
+});

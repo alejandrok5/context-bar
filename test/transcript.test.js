@@ -118,6 +118,19 @@ test('findLatestUsageTokens: falls back to full read when tail has no usage', ()
   assert.equal(findLatestUsageTokens(p), 4243);
 });
 
+test('findLatestUsageTokens: transcript without trailing newline still parses', () => {
+  // Real-world transcripts may be flushed mid-line; the last record
+  // should still be picked up whether or not it ends in '\n'.
+  const dir = tmpDir('cb-test-nonewline-');
+  const p = path.join(dir, 'no-newline.jsonl');
+  // Note: NO trailing newline.
+  fs.writeFileSync(
+    p,
+    '{"type":"assistant","message":{"usage":{"input_tokens":5,"cache_read_input_tokens":12345}}}'
+  );
+  assert.equal(findLatestUsageTokens(p), 12_350);
+});
+
 test('findLatestUsageTokens: stops at most-recent compact boundary, ignoring earlier ones', () => {
   // Two compactions: oldest usage 500k, then compact, then 200k, then compact, no usage after.
   const dir = tmpDir('cb-test-');

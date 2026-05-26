@@ -221,6 +221,31 @@ test('render: fractional pct near a zone boundary stays consistent', () => {
   assert.match(out, /Smart Zone/);
 });
 
+test('render: NaN windowSize falls back to 200k default', () => {
+  const out = render({
+    modelDisplayName: 'X',
+    windowSize: NaN,
+    usedTokens: 100_000,
+    costUsd: null,
+    branch: null,
+  }, { env: { NO_COLOR: '1' } });
+  assert.match(out, /50%/);
+  assert.match(out, /100k\/200k/);
+});
+
+test('render: negative usedTokens clamps to zero', () => {
+  const out = render({
+    modelDisplayName: 'X',
+    windowSize: 200_000,
+    usedTokens: -42_000,
+    costUsd: null,
+    branch: null,
+  }, { env: { NO_COLOR: '1' } });
+  assert.match(out, /\b0%/);
+  assert.match(out, /Smart Zone/);
+  assert.doesNotMatch(out, /-/); // no stray minus signs in the output
+});
+
 test('render: zero used tokens still renders without crashing', () => {
   const out = render({
     modelDisplayName: 'Opus',

@@ -34,6 +34,16 @@ test('formatTokens: invalid input returns 0', () => {
   assert.equal(formatTokens(-5), '0');
 });
 
+test('formatTokens: fractional values near the kilo boundary', () => {
+  // Pins current behavior at the n<1000 boundary: 999.6 rounds to "1000"
+  // (digits, not "1k") because the branch is chosen before rounding.
+  // Slight inconsistency but documented so a future tweak knows what
+  // it's changing.
+  assert.equal(formatTokens(999.4), '999');
+  assert.equal(formatTokens(999.6), '1000');
+  assert.equal(formatTokens(1000.0), '1k');
+});
+
 test('formatCost: null/zero returns null', () => {
   assert.equal(formatCost(0), null);
   assert.equal(formatCost(null), null);

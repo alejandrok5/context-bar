@@ -4,6 +4,11 @@
 // As of the time of writing it provides a JSON payload on stdin with
 // fields like { session, model, usage }. The exact shape may evolve,
 // so we read defensively and fall back where fields are missing.
+//
+// Last verified: no upstream contract docs yet; behavior inferred from
+// community payloads as of 2026-05-26. When OpenCode publishes a stable
+// schema, re-check the field names here (session.model, session.usage,
+// stdin.cost.total_usd) and bump this comment.
 
 const NAME = 'opencode';
 

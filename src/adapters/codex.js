@@ -3,6 +3,11 @@
 // OpenAI Codex CLI (https://github.com/openai/codex) does not (yet) have
 // a well-documented statusline contract. We accept either a stdin payload
 // with codex-flavored fields or env vars prefixed with CODEX_.
+//
+// Last verified: no published Codex statusline contract as of 2026-05-26.
+// Field names below (codex.usage.total_tokens, codex.model.id, CODEX_*
+// env vars) are best-guess based on shape conventions from the OpenAI
+// CLIs. Re-check when Codex documents a stable interface.
 
 const NAME = 'codex';
 

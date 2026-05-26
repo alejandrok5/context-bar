@@ -58,32 +58,12 @@ test('compareSemver: unparseable inputs compare as equal (safe default)', () => 
   assert.equal(compareSemver('1.0.0', null), 0);
 });
 
-test('isOptedOut: truthy values disable, 0/false/empty/unset do not', () => {
-  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: '1' }), true);
-  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: 'true' }), true);
-  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: 'yes' }), true);
-  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: '0' }), false);
-  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: 'false' }), false);
-  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: '' }), false);
+test('isOptedOut: only config.updateCheck=false opts out', () => {
+  assert.equal(isOptedOut(), false);
+  assert.equal(isOptedOut(null), false);
   assert.equal(isOptedOut({}), false);
-});
-
-test('isOptedOut: config.updateCheck=false opts out when env unset', () => {
-  assert.equal(isOptedOut({}, { updateCheck: false }), true);
-});
-
-test('isOptedOut: config.updateCheck=true is the same as no opt-out', () => {
-  assert.equal(isOptedOut({}, { updateCheck: true }), false);
-});
-
-test('isOptedOut: env=0 wins over config.updateCheck=false (re-enable via env)', () => {
-  // A user with updateCheck=false in their config can still re-enable
-  // on a one-shot basis by setting CONTEXT_BART_NO_UPDATE_CHECK=0.
-  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: '0' }, { updateCheck: false }), false);
-});
-
-test('isOptedOut: env=1 wins over config.updateCheck=true (one-shot disable)', () => {
-  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: '1' }, { updateCheck: true }), true);
+  assert.equal(isOptedOut({ updateCheck: true }), false);
+  assert.equal(isOptedOut({ updateCheck: false }), true);
 });
 
 test('cacheDir: respects XDG_CACHE_HOME on linux', () => {
@@ -141,11 +121,14 @@ test('readCachedUpdate: cache that omits `latest` returns null', () => {
   assert.equal(readCachedUpdate({ env, currentVersion: '0.1.3' }), null);
 });
 
-test('readCachedUpdate: opt-out env var short-circuits even with valid cache', () => {
+test('readCachedUpdate: config opt-out short-circuits even with valid cache', () => {
   const dir = tmpDir('cb-upd-');
-  const env = envWith(dir, { CONTEXT_BART_NO_UPDATE_CHECK: '1' });
+  const env = envWith(dir);
   writeCache(env, { latest: '99.99.99' });
-  assert.equal(readCachedUpdate({ env, currentVersion: '0.1.3' }), null);
+  assert.equal(
+    readCachedUpdate({ env, currentVersion: '0.1.3', config: { updateCheck: false } }),
+    null,
+  );
 });
 
 test('readCachedUpdate: missing currentVersion returns null', () => {
@@ -155,10 +138,13 @@ test('readCachedUpdate: missing currentVersion returns null', () => {
   assert.equal(readCachedUpdate({ env }), null);
 });
 
-test('maybeKickFetch: opt-out skips the spawn', () => {
+test('maybeKickFetch: config opt-out skips the spawn', () => {
   const dir = tmpDir('cb-upd-');
-  const env = envWith(dir, { CONTEXT_BART_NO_UPDATE_CHECK: '1' });
-  assert.equal(maybeKickFetch({ env, currentVersion: '0.1.3' }), false);
+  const env = envWith(dir);
+  assert.equal(
+    maybeKickFetch({ env, currentVersion: '0.1.3', config: { updateCheck: false } }),
+    false,
+  );
   assert.equal(fs.existsSync(cachePath(env)), false);
 });
 

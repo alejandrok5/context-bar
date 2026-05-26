@@ -25,27 +25,16 @@ function pickZone(pct, thresholds = DEFAULT_THRESHOLDS) {
   return { ...ZONES.dumb, key: 'dumb' };
 }
 
-// Resolve the {smart, dumb} threshold pair. Precedence per field:
-//   env var > config file > built-in default.
-// Any invalid value (NaN, out of (0, 100), or smart >= dumb) at the
-// chosen layer falls through to the next, so a broken config still
-// renders a sensible bar.
-function readThresholds(env, config = null) {
-  const parse = (raw) => {
-    if (raw == null || raw === '') return null;
-    const n = parseFloat(raw);
-    if (!Number.isFinite(n) || n <= 0 || n >= 100) return null;
-    return n;
-  };
+// Resolve the {smart, dumb} threshold pair from the user config, falling
+// back to the built-in defaults when a field is missing. src/config.js
+// is responsible for validation (range, smart < dumb); we only need to
+// fill in the gaps here.
+function readThresholds(config = null) {
   const cfgZones = config && config.zones ? config.zones : null;
-  const smart = parse(env.CONTEXT_BART_ZONE_SMART)
-    ?? (cfgZones && cfgZones.smart != null ? cfgZones.smart : null);
-  const dumb = parse(env.CONTEXT_BART_ZONE_DUMB)
-    ?? (cfgZones && cfgZones.dumb != null ? cfgZones.dumb : null);
-  const finalSmart = smart != null ? smart : DEFAULT_THRESHOLDS.smart;
-  const finalDumb = dumb != null ? dumb : DEFAULT_THRESHOLDS.dumb;
-  if (finalSmart >= finalDumb) return DEFAULT_THRESHOLDS;
-  return { smart: finalSmart, dumb: finalDumb };
+  const smart = cfgZones && cfgZones.smart != null ? cfgZones.smart : DEFAULT_THRESHOLDS.smart;
+  const dumb = cfgZones && cfgZones.dumb != null ? cfgZones.dumb : DEFAULT_THRESHOLDS.dumb;
+  if (smart >= dumb) return DEFAULT_THRESHOLDS;
+  return { smart, dumb };
 }
 
 const GLYPHS = {
@@ -75,40 +64,27 @@ function buildBar(pct, color, useColor, useAscii = false) {
   return `[${codeFilled}${filledStr}${ANSI.reset}${ANSI.dim}${emptyStr}${ANSI.reset}]`;
 }
 
-// Color precedence:
-//   1. FORCE_COLOR overrides everything (npm/supports-color convention).
-//      FORCE_COLOR=0/false/"" disables; any other value enables.
-//   2. NO_COLOR / CONTEXT_BART_NO_COLOR disable.
-//   3. Default: enabled.
-//
-// We do NOT auto-disable on process.stdout.isTTY === false. The primary
-// host (Claude Code) consumes the output through a captured pipe, where
-// isTTY is false, but ANSI codes are expected and rendered correctly.
-// Disabling color in that case would break the default experience.
-// Users who pipe into a non-ANSI consumer can opt out with NO_COLOR.
-function shouldUseColor(env, config = null) {
-  const fc = env.FORCE_COLOR;
-  if (fc != null && fc !== '') {
-    return !(fc === '0' || fc === 'false');
-  }
-  if (env.NO_COLOR != null && env.NO_COLOR !== '') return false;
-  if (env.CONTEXT_BART_NO_COLOR != null && env.CONTEXT_BART_NO_COLOR !== '') return false;
-  // Config file fallback. "auto" is the same as not setting it.
+// Color comes solely from the config file: "never" disables, "always"
+// or "auto" (the default) enables. We do NOT auto-disable on
+// process.stdout.isTTY === false: the primary host (Claude Code)
+// consumes the output through a captured pipe where isTTY is false but
+// ANSI codes still render correctly. Users on a non-ANSI consumer set
+// `"color": "never"` in their config.
+function shouldUseColor(config = null) {
   if (config && config.color === 'never') return false;
-  if (config && config.color === 'always') return true;
   return true;
 }
 
-// Render with [#####-----] instead of [▰▰▰▰▰▱▱▱▱▱] when the user opts in
-// via CONTEXT_BART_ASCII, or when their locale doesn't advertise UTF-8.
-// Some terminals (older Windows cmd, minimal busybox, SSH tunnels with a
-// stripped LANG) display the Unicode block glyphs as `??` or tofu, which
-// is uglier than plain ASCII.
+// Render with [#####-----] instead of [▰▰▰▰▰▱▱▱▱▱] when the user opts
+// in via `"ascii": true` in the config file, or when their locale
+// doesn't advertise UTF-8. Some terminals (older Windows cmd, minimal
+// busybox, SSH tunnels with a stripped LANG) display the Unicode block
+// glyphs as `??` or tofu, which is uglier than plain ASCII. Locale
+// detection isn't a "preference" — it's terminal-capability detection
+// — so it stays in env even though user prefs no longer do.
 function shouldUseAscii(env, config = null) {
-  if (env.CONTEXT_BART_ASCII != null && env.CONTEXT_BART_ASCII !== '') return true;
   const lc = (env.LC_ALL || env.LC_CTYPE || env.LANG || '');
   if (lc && !/utf-?8/i.test(lc)) return true;
-  // Config file fallback: only consulted when neither env nor locale forces ASCII.
   if (config && config.ascii === true) return true;
   return false;
 }
@@ -123,9 +99,9 @@ function render(payload, { env = process.env, config = null } = {}) {
     updateAvailable,
   } = payload;
 
-  const useColor = shouldUseColor(env, config);
+  const useColor = shouldUseColor(config);
   const useAscii = shouldUseAscii(env, config);
-  const thresholds = readThresholds(env, config);
+  const thresholds = readThresholds(config);
   const safeWindow = windowSize > 0 ? windowSize : 200_000;
   const safeUsed = Math.max(0, usedTokens || 0);
   const pct = (safeUsed / safeWindow) * 100;

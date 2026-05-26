@@ -12,16 +12,17 @@ const path = require('path');
 const { run } = require('../src/index');
 const { tmpDir } = require('./_helpers');
 
-async function captureRun({ stdin = '{}', env = {} } = {}) {
+// Default config keeps test output deterministic: color off (no ANSI to
+// trip regex matches) and update-check off (so run() doesn't touch the
+// real user's cache or spawn background npm fetches).
+const QUIET_CONFIG = { color: 'never', updateCheck: false };
+
+async function captureRun({ stdin = '{}', env = {}, config = QUIET_CONFIG } = {}) {
   const written = [];
   const orig = process.stdout.write.bind(process.stdout);
   process.stdout.write = (chunk) => { written.push(String(chunk)); return true; };
   try {
-    // CONTEXT_BART_NO_UPDATE_CHECK keeps the orchestrator from touching
-    // the real user's cache dir or spawning background npm fetches
-    // during the test suite. Tests that need to exercise the notifier
-    // override it explicitly.
-    await run({ stdin, env: { NO_COLOR: '1', CONTEXT_BART_NO_UPDATE_CHECK: '1', ...env } });
+    await run({ stdin, env, config });
   } finally {
     process.stdout.write = orig;
   }
@@ -68,7 +69,7 @@ test('run: exceeds_200k_tokens flag forces 1M window', async () => {
   assert.match(out, /\/1M/);
 });
 
-test('run: CONTEXT_BART_WINDOW_TOKENS env override beats everything', async () => {
+test('run: config.windowTokens beats every other window signal', async () => {
   const stdin = JSON.stringify({
     transcript_path: '/no/such/file.jsonl',
     model: { id: 'claude-opus-4-7[1m]' },
@@ -76,7 +77,7 @@ test('run: CONTEXT_BART_WINDOW_TOKENS env override beats everything', async () =
   });
   const out = await captureRun({
     stdin,
-    env: { CONTEXT_BART_WINDOW_TOKENS: '400000' },
+    config: { ...QUIET_CONFIG, windowTokens: 400_000 },
   });
   assert.match(out, /\/400k/);
 });

@@ -15,10 +15,10 @@ When you're talking to a long-context model, the first ~30% of the window is the
 ## Features
 
 - **Single-line meter**: with a 10-segment progress bar, percentage, and zone label.
-- **Color tiers**: green (0–29%), yellow (30–39%), red (40%+). Honors `NO_COLOR`.
+- **Color tiers**: green (0–29%), yellow (30–39%), red (40%+). Toggle via the `color` field in [config](#configuration).
 - **Multi-host**: adapters for Claude Code, OpenCode, Codex, and a generic env-var fallback.
 - **Zero dependencies**: pure Node.js stdlib (`fs`, `child_process`). Node 18+.
-- **Auto window detection**: 1M when the model id is tagged `[1m]`, the host sets `exceeds_200k_tokens`, or observed usage tops 200k; 200k otherwise. Overridable via `CONTEXT_BART_WINDOW_TOKENS`.
+- **Auto window detection**: 1M when the model id is tagged `[1m]`, the host sets `exceeds_200k_tokens`, or observed usage tops 200k; 200k otherwise. Pin a specific window via `windowTokens` in [config](#configuration).
 - **Extras**: model name, raw tokens, git branch (annotated with worktree name when you're in a linked worktree, e.g. `feat-x@worktree_3`), session cost.
 - **Crash-safe**: any unexpected input degrades to a fallback line instead of breaking your status bar.
 
@@ -78,18 +78,11 @@ Restart Claude Code. The bar should appear at the bottom of your terminal sessio
 
 ### Updates
 
-`context-bart` does a once-a-day, fire-and-forget check against the npm registry. When a newer version is available, a dim `↑0.2.1` segment is appended to the bar, that's your cue to run `npm update -g context-bart` (or `git pull` if you cloned). The check runs in a detached background process so it never delays a status-bar refresh; results are cached in `${XDG_CACHE_HOME:-~/.cache}/context-bart/latest.json` (or `%LOCALAPPDATA%\context-bart\` on Windows). Opt out entirely with `CONTEXT_BART_NO_UPDATE_CHECK=1`.
+`context-bart` does a once-a-day, fire-and-forget check against the npm registry. When a newer version is available, a dim `↑0.2.1` segment is appended to the bar, that's your cue to run `npm update -g context-bart` (or `git pull` if you cloned). The check runs in a detached background process so it never delays a status-bar refresh; results are cached in `${XDG_CACHE_HOME:-~/.cache}/context-bart/latest.json` (or `%LOCALAPPDATA%\context-bart\` on Windows). Opt out entirely with `"updateCheck": false` in your [config file](#configuration).
 
 ## Configuration
 
-Most behavior is auto-detected. Two ways to override:
-
-1. A **JSON config file** for "set once, forget" preferences.
-2. **Environment variables** for one-shot overrides (and for hosts that inject runtime data).
-
-Precedence is always **env var > config file > built-in default** — so a single `CONTEXT_BART_ASCII=1 …` invocation can still flip behavior without editing your config.
-
-### Config file
+All user preferences live in a single JSON file. The file is optional — without it you get the defaults.
 
 Drop a `config.json` at:
 
@@ -113,33 +106,24 @@ Every field is optional; missing fields fall through to the defaults. Invalid va
 | `zones.smart` | `30` | Smart→approaching threshold (% of window). Must be in (0, 100) and less than `zones.dumb`. |
 | `zones.dumb` | `40` | approaching→Dumb threshold (% of window). |
 | `windowTokens` | `null` | Pin the context window size (e.g. `200000`, `1000000`). `null` keeps auto-detection. |
-| `ascii` | `false` | Force ASCII glyphs (`[#####-----]`) instead of Unicode (`[▰▰▰▰▰▱▱▱▱▱]`). Auto-on regardless when `LANG` is non-UTF-8. |
+| `ascii` | `false` | Force ASCII glyphs (`[#####-----]`) instead of Unicode (`[▰▰▰▰▰▱▱▱▱▱]`). Auto-on regardless when `LANG` is non-UTF-8 (terminal-capability detection isn't a preference). |
 | `updateCheck` | `true` | Set to `false` to disable the once-a-day npm version check. |
-| `color` | `"auto"` | `"auto"` follows `NO_COLOR` / `FORCE_COLOR`; `"never"` always disables; `"always"` always enables. |
+| `color` | `"auto"` | `"never"` disables ANSI color; `"auto"` and `"always"` enable it. The bar still renders correctly when piped to a non-TTY consumer (Claude Code captures the output that way by design). |
 
-### Environment variable overrides
+### Env vars used by host adapters
 
-Every config field has a matching env var for one-shot overrides:
+The following env vars are *not* user preferences — they're how the env-fallback and Codex adapters receive per-invocation runtime data from their host. You only set these if you're wiring up a host that drives the bar through env vars rather than a stdin JSON payload.
 
-| Env var | Default | What it does |
+| Env var | Used by | What it carries |
 | --- | --- | --- |
-| `CONTEXT_BART_WINDOW_TOKENS` | auto | Force the context window size (e.g. `200000`, `1000000`). |
-| `NO_COLOR` / `CONTEXT_BART_NO_COLOR` | unset | Disable ANSI color output. |
-| `FORCE_COLOR` | unset | Force color on (overrides `NO_COLOR`). Set to `0`/`false` to force off. |
-| `CONTEXT_BART_ZONE_SMART` | `30` | Smart→approaching threshold (% of window). |
-| `CONTEXT_BART_ZONE_DUMB` | `40` | approaching→Dumb threshold (% of window). |
-| `CONTEXT_BART_ASCII` | auto | Force ASCII glyphs. Auto-on when `LANG` is non-UTF-8. |
-| `CONTEXT_BART_NO_UPDATE_CHECK` | unset | Disable the once-a-day version check that appends a dim `↑x.y.z` segment when a newer release is on npm. |
-| `CONTEXT_BART_USED_TOKENS` | n/a | (env adapter only) Used tokens count. |
-| `CONTEXT_BART_MODEL_ID` | n/a | (env adapter only) Model id. |
-| `CONTEXT_BART_MODEL_NAME` | n/a | (env adapter only) Display name. |
-| `CONTEXT_BART_COST_USD` | n/a | (env adapter only) Cumulative cost. |
-| `CONTEXT_BART_CWD` | `$PWD` | (env adapter only) Working dir for git branch lookup. |
-| `CONTEXT_BART_TRANSCRIPT_PATH` | n/a | (env adapter only) JSONL transcript to parse. |
-
-### Why both a config file and env vars?
-
-The env-adapter vars in the bottom half of the table above (`CONTEXT_BART_USED_TOKENS`, `..._MODEL_ID`, etc.) carry per-invocation state that the host injects on every render — they can't live in a static file. The preference vars at the top (zones, ASCII, color, update-check) are the ones the config file replaces, and they're still honored on the env side so you can do a quick one-off override (`CONTEXT_BART_ASCII=1 …`) without editing your saved settings.
+| `CONTEXT_BART_MODEL_ID` | env adapter | Model id. |
+| `CONTEXT_BART_MODEL_NAME` | env adapter | Display name. |
+| `CONTEXT_BART_USED_TOKENS` | env adapter | Used tokens count. |
+| `CONTEXT_BART_WINDOW_TOKENS` | env adapter | Context window size. |
+| `CONTEXT_BART_COST_USD` | env adapter | Cumulative cost. |
+| `CONTEXT_BART_CWD` | env adapter | Working dir for git branch lookup (defaults to `$PWD`). |
+| `CONTEXT_BART_TRANSCRIPT_PATH` | env adapter | JSONL transcript to parse. |
+| `CODEX_*`, `OPENCODE_*` | Codex / OpenCode adapters | Host-specific runtime fields; see the per-host install docs. |
 
 ## How "used tokens" is computed
 
@@ -160,7 +144,7 @@ The cutoffs aren't picked from a hat — they track converging findings from a s
 - **[Intelligence Degradation in Long-Context LLMs (2026)](https://arxiv.org/abs/2601.15300)** — identifies a critical threshold around 40–50% of max context length where F1 scores collapse catastrophically (e.g. Qwen2.5-7B: 0.55 → 0.30, a 45% drop).
 - **[MRCR v2 8-needle leaderboard (2026)](https://llm-stats.com/benchmarks/mrcr-v2-(8-needle))** — OpenAI's multi-fact retrieval benchmark is the de-facto 2026 yardstick for the 1M tier. Even the leaders bleed double-digit points moving from 128K to 1M: Claude Opus 4.6 drops 93% → 76%, Gemini 3.1 Pro ~85% → ~70%. [2026 industry analysis](https://ofox.ai/blog/long-context-llm-benchmarks-200k-tokens-2026/) puts effective utilization at **50–65% of advertised window** for multi-hop work, and notes that the gap between "advertised" and "effective" widens to 30–60 points past 200K tokens ([reality check](https://tokenmix.ai/blog/1m-token-context-reality-check-2026)).
 
-Numbers vary by model and task, but the cliff consistently lands in the **30–50% of window** band — and the 1M tier hasn't changed that, it's just stretched the absolute token count where degradation starts. `context-bart` warns yellow at 30% and red at 40% — deliberately conservative, since the alternative is realizing you're past the cliff only after a bad answer. If you're working exclusively on a model with an unusually flat degradation profile, raise the bar via `CONTEXT_BART_ZONE_SMART` / `CONTEXT_BART_ZONE_DUMB`, or fork `src/render.js` (`pickZone`) — it's ~10 lines.
+Numbers vary by model and task, but the cliff consistently lands in the **30–50% of window** band — and the 1M tier hasn't changed that, it's just stretched the absolute token count where degradation starts. `context-bart` warns yellow at 30% and red at 40% — deliberately conservative, since the alternative is realizing you're past the cliff only after a bad answer. If you're working exclusively on a model with an unusually flat degradation profile, raise the bar via `"zones"` in your [config file](#configuration), or fork `src/render.js` (`pickZone`) — it's ~10 lines.
 
 ## Add a new host adapter
 

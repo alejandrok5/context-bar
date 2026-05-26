@@ -16,15 +16,9 @@ function largeWindowForFamily(modelId) {
   return ONE_MILLION;
 }
 
-function detectWindowSize(modelId, envOverride, signals = {}, config = null) {
-  // Highest priority: explicit env override.
-  if (envOverride) {
-    const n = parseInt(envOverride, 10);
-    if (Number.isFinite(n) && n > 0) return n;
-  }
-
-  // Next: a value pinned in the user config file. Already validated by
-  // src/config.js (positive finite integer), so trust it as-is.
+function detectWindowSize(modelId, signals = {}, config = null) {
+  // Highest priority: a value pinned in the user config file. Already
+  // validated by src/config.js (positive finite integer), so trust it.
   if (config && typeof config.windowTokens === 'number' && config.windowTokens > 0) {
     return config.windowTokens;
   }

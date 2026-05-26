@@ -8,19 +8,44 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { tmpDir } = require('./_helpers');
 
 const BIN = path.join(__dirname, '..', 'bin', 'context-bart.js');
 const FIXTURE = path.join(__dirname, 'fixtures', 'claude-usage.jsonl');
+
+// Build a one-off XDG config dir containing a config.json that turns
+// off color (so regex matches don't have to deal with ANSI noise) and
+// disables the update notifier (so the smoke tests don't write to the
+// real ~/.cache or spawn detached fetchers that hit npm). Also point
+// XDG_CACHE_HOME at the same tmpdir as a belt-and-suspenders measure.
+function makeQuietEnv(extra = {}) {
+  const dir = tmpDir('cb-cli-');
+  const cfgDir = path.join(dir, 'config', 'context-bart');
+  fs.mkdirSync(cfgDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(cfgDir, 'config.json'),
+    JSON.stringify({ color: 'never', updateCheck: false }),
+  );
+  return {
+    ...process.env,
+    XDG_CONFIG_HOME: path.join(dir, 'config'),
+    XDG_CACHE_HOME: path.join(dir, 'cache'),
+    // Windows equivalents — same dir works for both since configDir()
+    // and cacheDir() join 'context-bart' onto whichever base wins.
+    APPDATA: path.join(dir, 'config'),
+    LOCALAPPDATA: path.join(dir, 'cache'),
+    ...extra,
+  };
+}
 
 function runCli(stdin, extraEnv = {}) {
   return spawnSync('node', [BIN], {
     input: stdin,
     encoding: 'utf8',
-    // Opt the smoke tests out of the update notifier so we don't write
-    // to the real ~/.cache or spawn detached fetchers that hit npm.
-    env: { ...process.env, NO_COLOR: '1', CONTEXT_BART_NO_UPDATE_CHECK: '1', ...extraEnv },
+    env: makeQuietEnv(extraEnv),
   });
 }
 

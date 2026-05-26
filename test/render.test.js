@@ -4,6 +4,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { render, pickZone, buildBar, shouldUseColor, shouldUseAscii, readThresholds, DEFAULT_THRESHOLDS } = require('../src/render');
 
+// All preference inputs come from the config object now; env is only
+// consulted for locale (LANG / LC_*) so the bar can degrade to ASCII
+// on terminals that can't render Unicode.
+const NO_COLOR_CFG = { color: 'never' };
+
 test('pickZone: < 30% is green Smart Zone', () => {
   for (const pct of [0, 5, 15, 29, 29.99]) {
     const z = pickZone(pct);
@@ -39,118 +44,85 @@ test('pickZone: custom thresholds shift the boundaries', () => {
   assert.equal(pickZone(75, thresholds).color, 'red');
 });
 
-test('readThresholds: env overrides parsed as percentages', () => {
-  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '50', CONTEXT_BART_ZONE_DUMB: '80' }), { smart: 50, dumb: 80 });
-  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '25.5', CONTEXT_BART_ZONE_DUMB: '60' }), { smart: 25.5, dumb: 60 });
+test('readThresholds: no config returns defaults', () => {
+  assert.deepEqual(readThresholds(), DEFAULT_THRESHOLDS);
+  assert.deepEqual(readThresholds(null), DEFAULT_THRESHOLDS);
+  assert.deepEqual(readThresholds({ zones: null }), DEFAULT_THRESHOLDS);
 });
 
-test('readThresholds: missing values fall back to defaults', () => {
-  assert.deepEqual(readThresholds({}), DEFAULT_THRESHOLDS);
-  // Only smart set, paired with default dumb=40 → smart(50) >= dumb(40)
-  // is nonsensical, so the whole pair falls back to defaults.
-  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '50' }), DEFAULT_THRESHOLDS);
-  // smart=20 with default dumb=40 is valid.
-  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '20' }), { smart: 20, dumb: 40 });
-  // dumb=80 alone with default smart=30 is valid.
-  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_DUMB: '80' }), { smart: 30, dumb: 80 });
+test('readThresholds: config zones are used directly', () => {
+  assert.deepEqual(readThresholds({ zones: { smart: 50, dumb: 80 } }), { smart: 50, dumb: 80 });
 });
 
-test('readThresholds: invalid values fall back to defaults', () => {
-  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: 'nope', CONTEXT_BART_ZONE_DUMB: 'nope' }), DEFAULT_THRESHOLDS);
-  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '-10' }), DEFAULT_THRESHOLDS);
-  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '200' }), DEFAULT_THRESHOLDS);
+test('readThresholds: partial config pairs with defaults', () => {
+  // smart from config, dumb falls back to the default (40).
+  assert.deepEqual(readThresholds({ zones: { smart: 20, dumb: null } }), { smart: 20, dumb: 40 });
+  // dumb from config, smart falls back to the default (30).
+  assert.deepEqual(readThresholds({ zones: { smart: null, dumb: 80 } }), { smart: 30, dumb: 80 });
 });
 
-test('readThresholds: smart >= dumb is rejected as nonsense', () => {
-  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '60', CONTEXT_BART_ZONE_DUMB: '50' }), DEFAULT_THRESHOLDS);
-  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '50', CONTEXT_BART_ZONE_DUMB: '50' }), DEFAULT_THRESHOLDS);
+test('readThresholds: smart >= dumb after merge falls back to defaults', () => {
+  // config smart=50 + default dumb=40 → 50 >= 40 → drop the pair.
+  assert.deepEqual(readThresholds({ zones: { smart: 50, dumb: null } }), DEFAULT_THRESHOLDS);
 });
 
-test('readThresholds: config used when env is unset', () => {
-  const cfg = { zones: { smart: 25, dumb: 70 } };
-  assert.deepEqual(readThresholds({}, cfg), { smart: 25, dumb: 70 });
+test('shouldUseColor: no config = color on', () => {
+  assert.equal(shouldUseColor(), true);
+  assert.equal(shouldUseColor(null), true);
+  assert.equal(shouldUseColor({}), true);
 });
 
-test('readThresholds: env value wins over config', () => {
-  const cfg = { zones: { smart: 25, dumb: 70 } };
-  assert.deepEqual(
-    readThresholds({ CONTEXT_BART_ZONE_SMART: '10', CONTEXT_BART_ZONE_DUMB: '20' }, cfg),
-    { smart: 10, dumb: 20 },
-  );
+test('shouldUseColor: config.color="never" disables', () => {
+  assert.equal(shouldUseColor({ color: 'never' }), false);
 });
 
-test('readThresholds: env partial + config partial blend correctly', () => {
-  // env supplies smart, config supplies dumb.
-  const cfg = { zones: { smart: 99, dumb: 65 } };
-  assert.deepEqual(
-    readThresholds({ CONTEXT_BART_ZONE_SMART: '15' }, cfg),
-    { smart: 15, dumb: 65 },
-  );
+test('shouldUseColor: config.color="auto" / "always" leave color on', () => {
+  assert.equal(shouldUseColor({ color: 'auto' }), true);
+  assert.equal(shouldUseColor({ color: 'always' }), true);
 });
 
-test('readThresholds: null/empty config falls through to defaults', () => {
-  assert.deepEqual(readThresholds({}, null), DEFAULT_THRESHOLDS);
-  assert.deepEqual(readThresholds({}, { zones: null }), DEFAULT_THRESHOLDS);
-});
-
-test('shouldUseAscii: config.ascii=true enables ASCII when env unset', () => {
+test('shouldUseAscii: config.ascii=true forces ASCII', () => {
   assert.equal(shouldUseAscii({}, { ascii: true }), true);
 });
 
-test('shouldUseAscii: env empty does NOT trigger ASCII via config absence', () => {
-  // CONTEXT_BART_ASCII unset + UTF-8 locale + no config → Unicode.
-  assert.equal(shouldUseAscii({ LANG: 'en_US.UTF-8' }, { ascii: false }), false);
+test('shouldUseAscii: no config + UTF-8 locale = Unicode', () => {
   assert.equal(shouldUseAscii({ LANG: 'en_US.UTF-8' }, null), false);
+  assert.equal(shouldUseAscii({ LC_CTYPE: 'C.utf8' }, null), false);
+  assert.equal(shouldUseAscii({}, null), false);
 });
 
-test('shouldUseColor: config.color=never disables color when env unset', () => {
-  assert.equal(shouldUseColor({}, { color: 'never' }), false);
+test('shouldUseAscii: non-UTF locale falls back to ASCII regardless of config', () => {
+  // Locale detection is terminal-capability, not a user preference —
+  // it always trumps a config that says "Unicode is fine".
+  assert.equal(shouldUseAscii({ LANG: 'C' }, null), true);
+  assert.equal(shouldUseAscii({ LANG: 'POSIX' }, { ascii: false }), true);
+  assert.equal(shouldUseAscii({ LC_ALL: 'en_US.ISO-8859-1' }, null), true);
 });
 
-test('shouldUseColor: NO_COLOR env wins over config.color=always', () => {
-  assert.equal(shouldUseColor({ NO_COLOR: '1' }, { color: 'always' }), false);
-});
-
-test('shouldUseColor: FORCE_COLOR=1 wins over config.color=never', () => {
-  assert.equal(shouldUseColor({ FORCE_COLOR: '1' }, { color: 'never' }), true);
-});
-
-test('render: config thresholds take effect when env is empty', () => {
-  // At 35% with defaults (30/40) we'd be yellow; with config 50/80 we should be green.
+test('render: config thresholds shift the displayed zone', () => {
+  // At 35% with defaults (30/40) we'd be yellow Smart Zone; with 50/80
+  // the bar should still be green Smart Zone.
   const out = render({
     modelDisplayName: 'X',
     windowSize: 200_000,
     usedTokens: 70_000, // 35%
     costUsd: null,
     branch: null,
-  }, { env: { NO_COLOR: '1' }, config: { zones: { smart: 50, dumb: 80 } } });
+  }, { env: {}, config: { color: 'never', zones: { smart: 50, dumb: 80 } } });
   assert.match(out, /Smart Zone/);
-  // No yellow ANSI, no Dumb Zone label — green Smart Zone.
   assert.doesNotMatch(out, /Dumb Zone/);
 });
 
-test('render: config.ascii=true produces ASCII bar without env var', () => {
+test('render: config.ascii=true produces ASCII bar', () => {
   const out = render({
     modelDisplayName: 'Opus',
     windowSize: 200_000,
     usedTokens: 100_000,
     costUsd: null,
     branch: null,
-  }, { env: { NO_COLOR: '1', LANG: 'en_US.UTF-8' }, config: { ascii: true } });
+  }, { env: { LANG: 'en_US.UTF-8' }, config: { color: 'never', ascii: true } });
   assert.match(out, /\[#####-----\]/);
   assert.doesNotMatch(out, /▰|▱/);
-});
-
-test('render: custom thresholds via env change zone selection', () => {
-  // At 35% with defaults (30/40) we'd be yellow; with 50/80 we should be green.
-  const out = render({
-    modelDisplayName: 'X',
-    windowSize: 200_000,
-    usedTokens: 70_000, // 35%
-    costUsd: null,
-    branch: null,
-  }, { env: { NO_COLOR: '1', CONTEXT_BART_ZONE_SMART: '50', CONTEXT_BART_ZONE_DUMB: '80' } });
-  assert.match(out, /Smart Zone/);
 });
 
 test('buildBar: fills correct number of blocks (no color)', () => {
@@ -164,8 +136,6 @@ test('buildBar: clamps overflow to 10 blocks', () => {
 });
 
 test('buildBar: unknown color renders uncolored, never emits "undefined"', () => {
-  // A future zone with an unmapped color name (or a typo) should
-  // degrade to the no-color form, never leak the literal "undefined".
   const out = buildBar(50, 'periwinkle', true);
   assert.equal(out, '[▰▰▰▰▰▱▱▱▱▱]');
   assert.doesNotMatch(out, /undefined/);
@@ -177,59 +147,10 @@ test('buildBar: ASCII mode uses # and - glyphs', () => {
   assert.equal(buildBar(100, 'red', false, true), '[##########]');
 });
 
-test('shouldUseAscii: CONTEXT_BART_ASCII enables ASCII', () => {
-  assert.equal(shouldUseAscii({ CONTEXT_BART_ASCII: '1' }), true);
-  assert.equal(shouldUseAscii({ CONTEXT_BART_ASCII: 'true' }), true);
-  assert.equal(shouldUseAscii({}), false);
-});
-
-test('shouldUseAscii: non-UTF locale falls back to ASCII', () => {
-  assert.equal(shouldUseAscii({ LANG: 'C' }), true);
-  assert.equal(shouldUseAscii({ LANG: 'POSIX' }), true);
-  assert.equal(shouldUseAscii({ LC_ALL: 'en_US.ISO-8859-1' }), true);
-});
-
-test('shouldUseAscii: UTF-8 locale uses Unicode glyphs', () => {
-  assert.equal(shouldUseAscii({ LANG: 'en_US.UTF-8' }), false);
-  assert.equal(shouldUseAscii({ LC_CTYPE: 'C.utf8' }), false);
-});
-
-test('render: CONTEXT_BART_ASCII produces ASCII bar', () => {
-  const out = render({
-    modelDisplayName: 'Opus',
-    windowSize: 200_000,
-    usedTokens: 100_000,
-    costUsd: null,
-    branch: null,
-  }, { env: { NO_COLOR: '1', CONTEXT_BART_ASCII: '1' } });
-  assert.match(out, /\[#####-----\]/);
-  assert.doesNotMatch(out, /▰|▱/);
-});
-
 test('buildBar: with color, contains ANSI codes', () => {
   const out = buildBar(50, 'red', true);
   assert.match(out, /\x1b\[31m/);
   assert.match(out, /\x1b\[0m/);
-});
-
-test('shouldUseColor: NO_COLOR disables color', () => {
-  assert.equal(shouldUseColor({ NO_COLOR: '1' }), false);
-  assert.equal(shouldUseColor({ NO_COLOR: 'true' }), false);
-  assert.equal(shouldUseColor({}), true);
-});
-
-test('shouldUseColor: CONTEXT_BART_NO_COLOR also disables', () => {
-  assert.equal(shouldUseColor({ CONTEXT_BART_NO_COLOR: '1' }), false);
-});
-
-test('shouldUseColor: FORCE_COLOR=1 wins over NO_COLOR', () => {
-  assert.equal(shouldUseColor({ FORCE_COLOR: '1', NO_COLOR: '1' }), true);
-  assert.equal(shouldUseColor({ FORCE_COLOR: '2' }), true);
-});
-
-test('shouldUseColor: FORCE_COLOR=0 disables even without NO_COLOR', () => {
-  assert.equal(shouldUseColor({ FORCE_COLOR: '0' }), false);
-  assert.equal(shouldUseColor({ FORCE_COLOR: 'false' }), false);
 });
 
 test('render: full payload produces expected segments', () => {
@@ -240,7 +161,7 @@ test('render: full payload produces expected segments', () => {
     usedTokens: 420_000,
     costUsd: 0.42,
     branch: 'main',
-  }, { env: { NO_COLOR: '1' } });
+  }, { env: {}, config: NO_COLOR_CFG });
 
   assert.match(out, /42%/);
   assert.match(out, /Dumb Zone/);
@@ -257,27 +178,26 @@ test('render: omits null branch and cost', () => {
     usedTokens: 20_000,
     costUsd: null,
     branch: null,
-  }, { env: { NO_COLOR: '1' } });
+  }, { env: {}, config: NO_COLOR_CFG });
 
   assert.doesNotMatch(out, /\$/);
-  // branch missing → no trailing ' · main' or similar; quick sanity:
   const segs = out.split(' · ');
   assert.ok(segs.length <= 4, `expected ≤4 segments, got: ${out}`);
 });
 
-test('render: NO_COLOR strips all ANSI codes', () => {
+test('render: config color=never strips all ANSI codes', () => {
   const out = render({
     modelDisplayName: 'Opus',
     windowSize: 1_000_000,
     usedTokens: 500_000,
     costUsd: 1.0,
     branch: 'feature/x',
-  }, { env: { NO_COLOR: '1' } });
+  }, { env: {}, config: NO_COLOR_CFG });
 
   assert.doesNotMatch(out, /\x1b\[/);
 });
 
-test('render: with color, output contains ANSI codes', () => {
+test('render: no config = color on, output contains ANSI codes', () => {
   const out = render({
     modelDisplayName: 'Opus',
     windowSize: 1_000_000,
@@ -298,7 +218,7 @@ test('render: fractional pct near a zone boundary stays consistent', () => {
     usedTokens: 59_800,
     costUsd: null,
     branch: null,
-  }, { env: { NO_COLOR: '1' } });
+  }, { env: {}, config: NO_COLOR_CFG });
   assert.match(out, /\b29%/);
   assert.doesNotMatch(out, /\b30%/);
   assert.match(out, /Smart Zone/);
@@ -311,7 +231,7 @@ test('render: NaN windowSize falls back to 200k default', () => {
     usedTokens: 100_000,
     costUsd: null,
     branch: null,
-  }, { env: { NO_COLOR: '1' } });
+  }, { env: {}, config: NO_COLOR_CFG });
   assert.match(out, /50%/);
   assert.match(out, /100k\/200k/);
 });
@@ -323,10 +243,10 @@ test('render: negative usedTokens clamps to zero', () => {
     usedTokens: -42_000,
     costUsd: null,
     branch: null,
-  }, { env: { NO_COLOR: '1' } });
+  }, { env: {}, config: NO_COLOR_CFG });
   assert.match(out, /\b0%/);
   assert.match(out, /Smart Zone/);
-  assert.doesNotMatch(out, /-/); // no stray minus signs in the output
+  assert.doesNotMatch(out, /-/);
 });
 
 test('render: zero used tokens still renders without crashing', () => {
@@ -336,7 +256,7 @@ test('render: zero used tokens still renders without crashing', () => {
     usedTokens: 0,
     costUsd: null,
     branch: null,
-  }, { env: { NO_COLOR: '1' } });
+  }, { env: {}, config: NO_COLOR_CFG });
 
   assert.match(out, /0%/);
   assert.match(out, /Smart Zone/);
@@ -349,9 +269,8 @@ test('render: defaults to 200k window if windowSize missing', () => {
     usedTokens: 100_000,
     costUsd: null,
     branch: null,
-  }, { env: { NO_COLOR: '1' } });
+  }, { env: {}, config: NO_COLOR_CFG });
 
-  // 100k / 200k = 50%
   assert.match(out, /50%/);
 });
 
@@ -363,7 +282,7 @@ test('render: updateAvailable appends ↑version suffix (no color)', () => {
     costUsd: null,
     branch: null,
     updateAvailable: '0.2.1',
-  }, { env: { NO_COLOR: '1' } });
+  }, { env: {}, config: NO_COLOR_CFG });
   assert.match(out, /↑0\.2\.1$/);
   assert.doesNotMatch(out, /\x1b\[/);
 });
@@ -376,7 +295,7 @@ test('render: updateAvailable=null produces no arrow suffix', () => {
     costUsd: null,
     branch: null,
     updateAvailable: null,
-  }, { env: { NO_COLOR: '1' } });
+  }, { env: {}, config: NO_COLOR_CFG });
   assert.doesNotMatch(out, /↑/);
   assert.doesNotMatch(out, /\^[0-9]/);
 });
@@ -390,7 +309,6 @@ test('render: updateAvailable suffix is wrapped in dim ANSI when color is on', (
     branch: null,
     updateAvailable: '0.2.1',
   }, { env: {} });
-  // dim opens with ESC[2m and the suffix immediately follows.
   assert.match(out, /\x1b\[2m↑0\.2\.1\x1b\[0m$/);
 });
 
@@ -402,7 +320,7 @@ test('render: updateAvailable suffix uses ASCII caret in non-UTF locale', () => 
     costUsd: null,
     branch: null,
     updateAvailable: '0.2.1',
-  }, { env: { NO_COLOR: '1', LANG: 'C' } });
+  }, { env: { LANG: 'C' }, config: NO_COLOR_CFG });
   assert.match(out, /\^0\.2\.1$/);
   assert.doesNotMatch(out, /↑/);
 });

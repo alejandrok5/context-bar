@@ -22,11 +22,17 @@ function pickZone(pct) {
   return { ...ZONES.dumb, key: 'dumb' };
 }
 
-function buildBar(pct, color, useColor) {
+const GLYPHS = {
+  unicode: { filled: '▰', empty: '▱' },
+  ascii:   { filled: '#', empty: '-' },
+};
+
+function buildBar(pct, color, useColor, useAscii = false) {
   const clamped = Math.max(0, Math.min(100, pct));
   const filled = Math.min(10, Math.round(clamped / 10));
-  const filledStr = '▰'.repeat(filled);
-  const emptyStr = '▱'.repeat(10 - filled);
+  const glyphs = useAscii ? GLYPHS.ascii : GLYPHS.unicode;
+  const filledStr = glyphs.filled.repeat(filled);
+  const emptyStr = glyphs.empty.repeat(10 - filled);
   if (!useColor) return `[${filledStr}${emptyStr}]`;
   return `[${ANSI[color]}${filledStr}${ANSI.reset}${ANSI.dim}${emptyStr}${ANSI.reset}]`;
 }
@@ -35,6 +41,18 @@ function shouldUseColor(env) {
   if (env.NO_COLOR != null && env.NO_COLOR !== '') return false;
   if (env.CONTEXT_BAR_NO_COLOR != null && env.CONTEXT_BAR_NO_COLOR !== '') return false;
   return true;
+}
+
+// Render with [#####-----] instead of [▰▰▰▰▰▱▱▱▱▱] when the user opts in
+// via CONTEXT_BAR_ASCII, or when their locale doesn't advertise UTF-8.
+// Some terminals (older Windows cmd, minimal busybox, SSH tunnels with a
+// stripped LANG) display the Unicode block glyphs as `??` or tofu, which
+// is uglier than plain ASCII.
+function shouldUseAscii(env) {
+  if (env.CONTEXT_BAR_ASCII != null && env.CONTEXT_BAR_ASCII !== '') return true;
+  const lc = (env.LC_ALL || env.LC_CTYPE || env.LANG || '');
+  if (lc && !/utf-?8/i.test(lc)) return true;
+  return false;
 }
 
 function render(payload, { env = process.env } = {}) {
@@ -47,11 +65,12 @@ function render(payload, { env = process.env } = {}) {
   } = payload;
 
   const useColor = shouldUseColor(env);
+  const useAscii = shouldUseAscii(env);
   const safeWindow = windowSize > 0 ? windowSize : 200_000;
   const safeUsed = Math.max(0, usedTokens || 0);
   const pct = (safeUsed / safeWindow) * 100;
   const zone = pickZone(pct);
-  const bar = buildBar(pct, zone.color, useColor);
+  const bar = buildBar(pct, zone.color, useColor, useAscii);
 
   const pctStr = `${Math.round(pct)}%`;
   const zoneStr = useColor
@@ -72,4 +91,4 @@ function render(payload, { env = process.env } = {}) {
   return parts.join(' · ');
 }
 
-module.exports = { render, pickZone, buildBar, shouldUseColor, ANSI };
+module.exports = { render, pickZone, buildBar, shouldUseColor, shouldUseAscii, GLYPHS, ANSI };

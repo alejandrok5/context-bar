@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { render, pickZone, buildBar, shouldUseColor } = require('../src/render');
+const { render, pickZone, buildBar, shouldUseColor, shouldUseAscii } = require('../src/render');
 
 test('pickZone: < 30% is green Smart Zone', () => {
   for (const pct of [0, 5, 15, 29, 29.99]) {
@@ -39,6 +39,41 @@ test('buildBar: fills correct number of blocks (no color)', () => {
 
 test('buildBar: clamps overflow to 10 blocks', () => {
   assert.equal(buildBar(150, 'red', false), '[▰▰▰▰▰▰▰▰▰▰]');
+});
+
+test('buildBar: ASCII mode uses # and - glyphs', () => {
+  assert.equal(buildBar(0, 'green', false, true), '[----------]');
+  assert.equal(buildBar(45, 'yellow', false, true), '[#####-----]');
+  assert.equal(buildBar(100, 'red', false, true), '[##########]');
+});
+
+test('shouldUseAscii: CONTEXT_BAR_ASCII enables ASCII', () => {
+  assert.equal(shouldUseAscii({ CONTEXT_BAR_ASCII: '1' }), true);
+  assert.equal(shouldUseAscii({ CONTEXT_BAR_ASCII: 'true' }), true);
+  assert.equal(shouldUseAscii({}), false);
+});
+
+test('shouldUseAscii: non-UTF locale falls back to ASCII', () => {
+  assert.equal(shouldUseAscii({ LANG: 'C' }), true);
+  assert.equal(shouldUseAscii({ LANG: 'POSIX' }), true);
+  assert.equal(shouldUseAscii({ LC_ALL: 'en_US.ISO-8859-1' }), true);
+});
+
+test('shouldUseAscii: UTF-8 locale uses Unicode glyphs', () => {
+  assert.equal(shouldUseAscii({ LANG: 'en_US.UTF-8' }), false);
+  assert.equal(shouldUseAscii({ LC_CTYPE: 'C.utf8' }), false);
+});
+
+test('render: CONTEXT_BAR_ASCII produces ASCII bar', () => {
+  const out = render({
+    modelDisplayName: 'Opus',
+    windowSize: 200_000,
+    usedTokens: 100_000,
+    costUsd: null,
+    branch: null,
+  }, { env: { NO_COLOR: '1', CONTEXT_BAR_ASCII: '1' } });
+  assert.match(out, /\[#####-----\]/);
+  assert.doesNotMatch(out, /▰|▱/);
 });
 
 test('buildBar: with color, contains ANSI codes', () => {

@@ -56,6 +56,7 @@ Most behavior is auto-detected. Use these env vars to override:
 | --- | --- | --- |
 | `CONTEXT_BAR_WINDOW_TOKENS` | auto | Force the context window size (e.g. `200000`, `1000000`). |
 | `NO_COLOR` / `CONTEXT_BAR_NO_COLOR` | unset | Disable ANSI color output. |
+| `CONTEXT_BAR_ASCII` | auto | Force ASCII glyphs (`[#####-----]`) instead of Unicode (`[▰▰▰▰▰▱▱▱▱▱]`). Auto-on when `LANG` is non-UTF-8. |
 | `CONTEXT_BAR_USED_TOKENS` | n/a | (env adapter only) Used tokens count. |
 | `CONTEXT_BAR_MODEL_ID` | n/a | (env adapter only) Model id. |
 | `CONTEXT_BAR_MODEL_NAME` | n/a | (env adapter only) Display name. |

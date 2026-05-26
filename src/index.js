@@ -39,9 +39,13 @@ async function run({ env = process.env, stdin } = {}) {
   // Most hosts don't expose a reliable window-size field, but the actual
   // token count is an unambiguous lower bound — if we already exceed 200k,
   // we know the window can't be 200k.
+  // findLatestUsageTokens may return null when we genuinely have no reading
+  // (no transcript, unreadable file, no usage blocks). Coerce to 0 for the
+  // render path so the bar still shows; window detection ignores null.
+  const transcriptUsage = findLatestUsageTokens(partial.transcriptPath);
   const usedTokens = (partial.usedTokens != null)
     ? partial.usedTokens
-    : findLatestUsageTokens(partial.transcriptPath);
+    : (transcriptUsage != null ? transcriptUsage : 0);
   const windowSize = partial.windowSize
     || detectWindowSize(modelId, env.CONTEXT_BAR_WINDOW_TOKENS, {
       usedTokens,

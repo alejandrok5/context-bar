@@ -52,26 +52,26 @@ test('findLatestUsageTokens: skips malformed JSON lines', () => {
   assert.equal(findLatestUsageTokens(fixturePath), 800);
 });
 
-test('findLatestUsageTokens: empty file returns 0', () => {
+test('findLatestUsageTokens: empty file returns null (no reading available)', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-test-'));
   const p = path.join(tmpDir, 'empty.jsonl');
   fs.writeFileSync(p, '');
-  assert.equal(findLatestUsageTokens(p), 0);
+  assert.equal(findLatestUsageTokens(p), null);
 });
 
-test('findLatestUsageTokens: nonexistent path returns 0', () => {
-  assert.equal(findLatestUsageTokens('/no/such/file.jsonl'), 0);
+test('findLatestUsageTokens: nonexistent path returns null', () => {
+  assert.equal(findLatestUsageTokens('/no/such/file.jsonl'), null);
 });
 
-test('findLatestUsageTokens: missing path returns 0', () => {
-  assert.equal(findLatestUsageTokens(null), 0);
-  assert.equal(findLatestUsageTokens(undefined), 0);
-  assert.equal(findLatestUsageTokens(''), 0);
+test('findLatestUsageTokens: missing path returns null', () => {
+  assert.equal(findLatestUsageTokens(null), null);
+  assert.equal(findLatestUsageTokens(undefined), null);
+  assert.equal(findLatestUsageTokens(''), null);
 });
 
-test('findLatestUsageTokens: file with no usage anywhere returns 0', () => {
+test('findLatestUsageTokens: file with no usage anywhere returns null', () => {
   const fixturePath = path.join(FIXTURES, 'no-usage.jsonl');
-  assert.equal(findLatestUsageTokens(fixturePath), 0);
+  assert.equal(findLatestUsageTokens(fixturePath), null);
 });
 
 test('findLatestUsageTokens: compact_boundary with no post-compact usage returns 0', () => {

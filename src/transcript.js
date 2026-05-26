@@ -18,15 +18,20 @@ function isCompactBoundary(obj) {
   );
 }
 
+// Returns the most recent usage-token count, or `null` when we genuinely
+// don't have a reading (missing path, unreadable file, no usage block in
+// the transcript). The post-/compact case returns a real `0`, not null —
+// that's a deliberate "context is empty" signal, not absence of data.
+// Callers that just want a number for display can coerce null → 0.
 function findLatestUsageTokens(transcriptPath) {
-  if (!transcriptPath) return 0;
+  if (!transcriptPath) return null;
   let content;
   try {
     content = fs.readFileSync(transcriptPath, 'utf8');
   } catch {
-    return 0;
+    return null;
   }
-  if (!content) return 0;
+  if (!content) return null;
 
   const lines = content.split('\n');
   for (let i = lines.length - 1; i >= 0; i--) {
@@ -48,7 +53,7 @@ function findLatestUsageTokens(transcriptPath) {
     const usage = obj && obj.message && obj.message.usage;
     if (usage) return sumUsage(usage);
   }
-  return 0;
+  return null;
 }
 
 module.exports = { findLatestUsageTokens, sumUsage, isCompactBoundary };

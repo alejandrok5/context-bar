@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { render, pickZone, buildBar, shouldUseColor, shouldUseAscii } = require('../src/render');
+const { render, pickZone, buildBar, shouldUseColor, shouldUseAscii, readThresholds, DEFAULT_THRESHOLDS } = require('../src/render');
 
 test('pickZone: < 30% is green Smart Zone', () => {
   for (const pct of [0, 5, 15, 29, 29.99]) {
@@ -29,6 +29,53 @@ test('pickZone: >= 40% is red Dumb Zone', () => {
     assert.equal(z.color, 'red');
     assert.equal(z.key, 'dumb');
   }
+});
+
+test('pickZone: custom thresholds shift the boundaries', () => {
+  const thresholds = { smart: 50, dumb: 75 };
+  assert.equal(pickZone(49, thresholds).color, 'green');
+  assert.equal(pickZone(50, thresholds).color, 'yellow');
+  assert.equal(pickZone(74, thresholds).color, 'yellow');
+  assert.equal(pickZone(75, thresholds).color, 'red');
+});
+
+test('readThresholds: env overrides parsed as percentages', () => {
+  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '50', CONTEXT_BAR_ZONE_DUMB: '80' }), { smart: 50, dumb: 80 });
+  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '25.5', CONTEXT_BAR_ZONE_DUMB: '60' }), { smart: 25.5, dumb: 60 });
+});
+
+test('readThresholds: missing values fall back to defaults', () => {
+  assert.deepEqual(readThresholds({}), DEFAULT_THRESHOLDS);
+  // Only smart set, paired with default dumb=40 → smart(50) >= dumb(40)
+  // is nonsensical, so the whole pair falls back to defaults.
+  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '50' }), DEFAULT_THRESHOLDS);
+  // smart=20 with default dumb=40 is valid.
+  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '20' }), { smart: 20, dumb: 40 });
+  // dumb=80 alone with default smart=30 is valid.
+  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_DUMB: '80' }), { smart: 30, dumb: 80 });
+});
+
+test('readThresholds: invalid values fall back to defaults', () => {
+  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: 'nope', CONTEXT_BAR_ZONE_DUMB: 'nope' }), DEFAULT_THRESHOLDS);
+  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '-10' }), DEFAULT_THRESHOLDS);
+  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '200' }), DEFAULT_THRESHOLDS);
+});
+
+test('readThresholds: smart >= dumb is rejected as nonsense', () => {
+  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '60', CONTEXT_BAR_ZONE_DUMB: '50' }), DEFAULT_THRESHOLDS);
+  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '50', CONTEXT_BAR_ZONE_DUMB: '50' }), DEFAULT_THRESHOLDS);
+});
+
+test('render: custom thresholds via env change zone selection', () => {
+  // At 35% with defaults (30/40) we'd be yellow; with 50/80 we should be green.
+  const out = render({
+    modelDisplayName: 'X',
+    windowSize: 200_000,
+    usedTokens: 70_000, // 35%
+    costUsd: null,
+    branch: null,
+  }, { env: { NO_COLOR: '1', CONTEXT_BAR_ZONE_SMART: '50', CONTEXT_BAR_ZONE_DUMB: '80' } });
+  assert.match(out, /Smart Zone/);
 });
 
 test('buildBar: fills correct number of blocks (no color)', () => {

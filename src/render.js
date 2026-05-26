@@ -16,10 +16,32 @@ const ZONES = {
   dumb:         { label: 'Dumb Zone',  color: 'red' },
 };
 
-function pickZone(pct) {
-  if (pct < 30) return { ...ZONES.smart,        key: 'smart' };
-  if (pct < 40) return { ...ZONES.approaching,  key: 'approaching' };
+const DEFAULT_THRESHOLDS = { smart: 30, dumb: 40 };
+
+function pickZone(pct, thresholds = DEFAULT_THRESHOLDS) {
+  const { smart, dumb } = thresholds;
+  if (pct < smart) return { ...ZONES.smart,        key: 'smart' };
+  if (pct < dumb)  return { ...ZONES.approaching,  key: 'approaching' };
   return { ...ZONES.dumb, key: 'dumb' };
+}
+
+// Parse CONTEXT_BAR_ZONE_SMART / CONTEXT_BAR_ZONE_DUMB env vars into a
+// {smart, dumb} threshold pair. Any invalid value (NaN, out of (0, 100),
+// or smart >= dumb) falls back to the defaults so the bar still renders
+// sensibly with broken config.
+function readThresholds(env) {
+  const parse = (raw) => {
+    if (raw == null || raw === '') return null;
+    const n = parseFloat(raw);
+    if (!Number.isFinite(n) || n <= 0 || n >= 100) return null;
+    return n;
+  };
+  const smart = parse(env.CONTEXT_BAR_ZONE_SMART);
+  const dumb = parse(env.CONTEXT_BAR_ZONE_DUMB);
+  const finalSmart = smart != null ? smart : DEFAULT_THRESHOLDS.smart;
+  const finalDumb = dumb != null ? dumb : DEFAULT_THRESHOLDS.dumb;
+  if (finalSmart >= finalDumb) return DEFAULT_THRESHOLDS;
+  return { smart: finalSmart, dumb: finalDumb };
 }
 
 const GLYPHS = {
@@ -81,10 +103,11 @@ function render(payload, { env = process.env } = {}) {
 
   const useColor = shouldUseColor(env);
   const useAscii = shouldUseAscii(env);
+  const thresholds = readThresholds(env);
   const safeWindow = windowSize > 0 ? windowSize : 200_000;
   const safeUsed = Math.max(0, usedTokens || 0);
   const pct = (safeUsed / safeWindow) * 100;
-  const zone = pickZone(pct);
+  const zone = pickZone(pct, thresholds);
   const bar = buildBar(pct, zone.color, useColor, useAscii);
 
   const pctStr = `${Math.round(pct)}%`;
@@ -106,4 +129,4 @@ function render(payload, { env = process.env } = {}) {
   return parts.join(' · ');
 }
 
-module.exports = { render, pickZone, buildBar, shouldUseColor, shouldUseAscii, GLYPHS, ANSI };
+module.exports = { render, pickZone, buildBar, shouldUseColor, shouldUseAscii, readThresholds, GLYPHS, ANSI, DEFAULT_THRESHOLDS };

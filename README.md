@@ -7,7 +7,7 @@
 
 > A Smart Zone / Dumb Zone context-window meter for Claude Code, OpenCode, Codex, and other AI coding agents.
 
-![Context Bar — three zones across the session lifecycle](docs/demo.svg)
+![Context Bart — three zones across the session lifecycle](docs/demo.svg)
 
 ```
 [▰▰▰▰▱▱▱▱▱▱] 42% · Dumb Zone · Opus 4.7 · 412k/1M · main · $0.42

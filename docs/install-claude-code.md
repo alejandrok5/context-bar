@@ -2,7 +2,16 @@
 
 Claude Code reads a `statusLine` block from `~/.claude/settings.json`.
 
-## 1. Clone the repo
+## 1. Install context-bar
+
+Either:
+
+```bash
+npm install -g context-bar
+which context-bar    # note the path it prints
+```
+
+Or:
 
 ```bash
 git clone https://github.com/alejandrok5/context-bar.git ~/context-bar
@@ -10,19 +19,31 @@ git clone https://github.com/alejandrok5/context-bar.git ~/context-bar
 
 ## 2. Edit `~/.claude/settings.json`
 
-Add the `statusLine` block at the top level:
+Add the `statusLine` block at the top level. Pick the form that matches how you installed:
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "node /absolute/path/to/context-bar/bin/context-bar.js",
+    "command": "/Users/<you>/.npm-global/bin/context-bar",
     "padding": 1
   }
 }
 ```
 
-Use an **absolute path** — Claude Code does not expand `~`. On macOS/Linux you typically want `/Users/<you>/context-bar/...` or `/home/<you>/context-bar/...`. On Windows, use forward slashes.
+…or, for the git-clone path:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "node /Users/<you>/context-bar/bin/context-bar.js",
+    "padding": 1
+  }
+}
+```
+
+Use an **absolute path** — Claude Code does not expand `~` and runs the command without your shell's `PATH`. On macOS/Linux you typically want `/Users/<you>/...` or `/home/<you>/...`. On Windows, use forward slashes.
 
 If you already have other top-level keys (`permissions`, `enabledPlugins`, etc.), just add `statusLine` alongside them.
 

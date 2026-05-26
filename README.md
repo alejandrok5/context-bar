@@ -20,11 +20,21 @@ When you're talking to a long-context model, the first ~30% of the window is the
 
 ## Install
 
+Pick one:
+
 ```bash
+# npm (recommended for most users)
+npm install -g context-bar
+```
+
+```bash
+# git clone (if you want to pin to a commit or hack on the source)
 git clone https://github.com/alejandrok5/context-bar.git ~/context-bar
 ```
 
-That's it — no `npm install`, no build step. The script in `bin/context-bar.js` is ready to run.
+The npm install puts a `context-bar` binary on your `$PATH`. Find its absolute path with `which context-bar` (or `where context-bar` on Windows) — you'll need it for the host config below, because some hosts (notably Claude Code's `statusLine`) launch commands without inheriting your shell's `PATH`.
+
+The git-clone path requires no `npm install` and no build step. The script in `bin/context-bar.js` is ready to run.
 
 Then wire it into your tool of choice:
 
@@ -40,11 +50,13 @@ Add to `~/.claude/settings.json`:
 {
   "statusLine": {
     "type": "command",
-    "command": "node /absolute/path/to/context-bar/bin/context-bar.js",
+    "command": "/absolute/path/to/context-bar",
     "padding": 1
   }
 }
 ```
+
+Replace `/absolute/path/to/context-bar` with the output of `which context-bar` (npm install) or `node /absolute/path/to/context-bar/bin/context-bar.js` (git clone).
 
 Restart Claude Code. The bar should appear at the bottom of your terminal session.
 

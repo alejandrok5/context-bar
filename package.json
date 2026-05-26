@@ -35,7 +35,10 @@
     "context-rot",
     "smart-zone",
     "llm",
-    "ai-coding"
+    "ai-coding",
+    "terminal",
+    "cli",
+    "tui"
   ],
   "files": [
     "bin/",

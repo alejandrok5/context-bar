@@ -1,4 +1,4 @@
-# Context Bar
+# Context Bart
 
 [![CI](https://github.com/alejandrok5/context-bar/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/alejandrok5/context-bar/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/context-bar.svg)](https://www.npmjs.com/package/context-bar)

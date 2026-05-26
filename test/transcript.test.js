@@ -89,6 +89,35 @@ test('findLatestUsageTokens: usage AFTER compact_boundary is honored', () => {
   assert.equal(findLatestUsageTokens(fixturePath), 35_050);
 });
 
+test('findLatestUsageTokens: finds usage in the tail of a >256KB transcript', () => {
+  // Reproduce the perf-relevant case: a big file where only the LAST line
+  // has a real usage block. Pad with junk lines to push the file past the
+  // tail-read threshold, then make sure we still find the recent usage.
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-test-big-'));
+  const p = path.join(tmpDir, 'big.jsonl');
+  const padLine = JSON.stringify({ type: 'user', message: { content: 'x'.repeat(500) } });
+  const lines = [];
+  // ~500 bytes/line × 1000 lines = ~500KB of padding
+  for (let i = 0; i < 1000; i++) lines.push(padLine);
+  lines.push('{"type":"assistant","message":{"usage":{"input_tokens":10,"cache_read_input_tokens":7000}}}');
+  fs.writeFileSync(p, lines.join('\n') + '\n');
+  assert.ok(fs.statSync(p).size > 256 * 1024, 'fixture must exceed TAIL_BYTES');
+  assert.equal(findLatestUsageTokens(p), 7010);
+});
+
+test('findLatestUsageTokens: falls back to full read when tail has no usage', () => {
+  // Tail is all user padding; the only usage block lives BEFORE the tail
+  // window. We must still find it via the fallback full-file read.
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-test-fallback-'));
+  const p = path.join(tmpDir, 'fallback.jsonl');
+  const padLine = JSON.stringify({ type: 'user', message: { content: 'y'.repeat(500) } });
+  const head = ['{"type":"assistant","message":{"usage":{"input_tokens":1,"cache_read_input_tokens":4242}}}'];
+  for (let i = 0; i < 1000; i++) head.push(padLine);
+  fs.writeFileSync(p, head.join('\n') + '\n');
+  assert.ok(fs.statSync(p).size > 256 * 1024);
+  assert.equal(findLatestUsageTokens(p), 4243);
+});
+
 test('findLatestUsageTokens: stops at most-recent compact boundary, ignoring earlier ones', () => {
   // Two compactions: oldest usage 500k, then compact, then 200k, then compact, no usage after.
   const fs = require('fs');

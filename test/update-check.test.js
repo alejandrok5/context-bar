@@ -22,7 +22,12 @@ const { tmpDir } = require('./_helpers');
 // deliberately).
 
 function envWith(dir, extra = {}) {
-  return { XDG_CACHE_HOME: dir, ...extra };
+  // Set both the POSIX (XDG_CACHE_HOME) and Windows (LOCALAPPDATA) env
+  // vars so cachePath() lands inside the per-test tmpdir on every
+  // platform. Without LOCALAPPDATA, the Windows code path falls through
+  // to the shared os.tmpdir() and earlier tests leak state into later
+  // ones — the "missing cache file" assertions then fail on windows-*.
+  return { XDG_CACHE_HOME: dir, LOCALAPPDATA: dir, ...extra };
 }
 
 function writeCache(env, contents) {

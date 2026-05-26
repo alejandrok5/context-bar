@@ -140,7 +140,8 @@ npm test    # runs node --test on the test/ dir
 npm run smoke   # pipes an empty payload to verify the fallback path
 ```
 
-No dependencies to install.
+No dependencies to install. See [CONTRIBUTING.md](CONTRIBUTING.md) for
+the release process.
 
 ## License
 

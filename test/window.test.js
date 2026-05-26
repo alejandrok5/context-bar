@@ -75,7 +75,15 @@ test('prettyModelName: derives Opus/Sonnet/Haiku from id', () => {
 
 test('prettyModelName: handles GPT models', () => {
   assert.equal(prettyModelName('gpt-5'), 'GPT-5');
-  assert.equal(prettyModelName('gpt-4o-mini'), 'GPT-4o');
+  assert.equal(prettyModelName('gpt-4o'), 'GPT-4o');
+  assert.equal(prettyModelName('gpt-4'), 'GPT-4');
+});
+
+test('prettyModelName: preserves GPT variant suffixes', () => {
+  assert.equal(prettyModelName('gpt-4o-mini'), 'GPT-4o mini');
+  assert.equal(prettyModelName('gpt-4-turbo'), 'GPT-4 Turbo');
+  assert.equal(prettyModelName('gpt-5-nano'), 'GPT-5 nano');
+  assert.equal(prettyModelName('gpt-5-mini'), 'GPT-5 mini');
 });
 
 test('prettyModelName: unknown model returns stripped id', () => {

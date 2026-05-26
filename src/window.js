@@ -36,10 +36,19 @@ function prettyModelName(modelId, displayName) {
   if (/opus/i.test(stripped)) return matchVersion(stripped, 'Opus');
   if (/sonnet/i.test(stripped)) return matchVersion(stripped, 'Sonnet');
   if (/haiku/i.test(stripped)) return matchVersion(stripped, 'Haiku');
-  if (/gpt-?5/i.test(stripped)) return 'GPT-5';
-  if (/gpt-?4o/i.test(stripped)) return 'GPT-4o';
-  if (/gpt-?4/i.test(stripped)) return 'GPT-4';
+  // GPT: match the most specific variant first so we don't lose modifiers
+  // like "mini" or "turbo" (e.g. gpt-4o-mini must not render as "GPT-4o").
+  if (/gpt-?5/i.test(stripped)) return gptVariant(stripped, 'GPT-5');
+  if (/gpt-?4o/i.test(stripped)) return gptVariant(stripped, 'GPT-4o');
+  if (/gpt-?4/i.test(stripped)) return gptVariant(stripped, 'GPT-4');
   return stripped;
+}
+
+function gptVariant(s, base) {
+  if (/mini/i.test(s)) return `${base} mini`;
+  if (/turbo/i.test(s)) return `${base} Turbo`;
+  if (/nano/i.test(s)) return `${base} nano`;
+  return base;
 }
 
 function matchVersion(s, family) {

@@ -110,7 +110,11 @@ function render(payload, { env = process.env } = {}) {
   const zone = pickZone(pct, thresholds);
   const bar = buildBar(pct, zone.color, useColor, useAscii);
 
-  const pctStr = `${Math.round(pct)}%`;
+  // Use floor so the displayed integer can never overshoot the actual
+  // percentage. pickZone uses strict `<` comparisons, so e.g. pct=29.6
+  // is in the green zone — rendering "30%" alongside green text would
+  // be inconsistent. floor(29.6) = 29 keeps the label and color in sync.
+  const pctStr = `${Math.floor(pct)}%`;
   const zoneStr = useColor
     ? `${ANSI[zone.color]}${zone.label}${ANSI.reset}`
     : zone.label;

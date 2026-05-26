@@ -206,6 +206,21 @@ test('render: with color, output contains ANSI codes', () => {
   assert.match(out, /\x1b\[32m/); // green for 10%
 });
 
+test('render: fractional pct near a zone boundary stays consistent', () => {
+  // 59,800 / 200,000 = 29.9%. Must render as "29%" (floored) AND stay in
+  // the green Smart Zone, never "30%" alongside green text.
+  const out = render({
+    modelDisplayName: 'X',
+    windowSize: 200_000,
+    usedTokens: 59_800,
+    costUsd: null,
+    branch: null,
+  }, { env: { NO_COLOR: '1' } });
+  assert.match(out, /\b29%/);
+  assert.doesNotMatch(out, /\b30%/);
+  assert.match(out, /Smart Zone/);
+});
+
 test('render: zero used tokens still renders without crashing', () => {
   const out = render({
     modelDisplayName: 'Opus',

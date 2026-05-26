@@ -1,0 +1,71 @@
+name: Bug report
+description: Something renders wrong, crashes, or doesn't match expectations.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking a moment to file this. The single most useful
+        thing you can paste is the **redacted statusline payload** the
+        host sent us, plus the **output line** the script produced.
+
+  - type: input
+    id: host
+    attributes:
+      label: Host
+      description: Claude Code, OpenCode, Codex, or other.
+      placeholder: Claude Code 1.2.3
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node version
+      description: Output of `node --version`.
+      placeholder: v20.10.0
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS / terminal
+      placeholder: macOS 14, iTerm2 / Ubuntu 24, kitty / Windows 11, Windows Terminal
+    validations:
+      required: true
+
+  - type: textarea
+    id: payload
+    attributes:
+      label: Redacted payload on stdin
+      description: |
+        Run the script with the same payload the host sent, redact any
+        absolute paths / user identifiers, and paste here. If you don't
+        have the payload handy, capture it with:
+        `tee /tmp/last-payload.json | node /path/to/context-bar/bin/context-bar.js`
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: What context-bar printed
+      description: Copy the exact line (or error message) the script wrote to stdout.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Env vars set, terminal capability quirks, etc.

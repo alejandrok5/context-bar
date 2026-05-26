@@ -1,0 +1,42 @@
+name: New host adapter
+description: Request support for a host that isn't Claude Code, OpenCode, or Codex.
+labels: ["adapter"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        See README → "Add a new host adapter" for the contract.
+        The generic env adapter probably already works for your host —
+        try setting `CONTEXT_BAR_*` env vars before opening this issue.
+
+  - type: input
+    id: host
+    attributes:
+      label: Host name and version
+      placeholder: Aider 0.50, Cursor 0.40, ...
+    validations:
+      required: true
+
+  - type: input
+    id: docs
+    attributes:
+      label: Statusline contract docs
+      description: Link to upstream docs describing the JSON / env contract.
+    validations:
+      required: false
+
+  - type: textarea
+    id: payload
+    attributes:
+      label: Sample payload (stdin)
+      description: A redacted example of what the host pipes to a status command.
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: envs
+    attributes:
+      label: Relevant env vars
+      description: List any env vars the host sets that we should look at.
+      render: text

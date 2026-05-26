@@ -43,6 +43,13 @@ function getBranchAndWorktree(cwd) {
   const commonDir = path.resolve(cwd, commonDirRaw);
   const gitDir = path.resolve(cwd, gitDirRaw);
   const isLinkedWorktree = commonDir !== gitDir;
+  // `git rev-parse --show-toplevel` returns the *physical* path: any
+  // symlinks in the working-tree root are resolved to their target. If
+  // a user has `~/code/foo` symlinked to `/mnt/code/foo` and we land in
+  // the linked path, the basename here comes from the symlink target.
+  // That's fine for the "is this a linked worktree?" decision — both
+  // paths point at the same worktree directory — and it keeps the label
+  // stable regardless of which symlink the user followed in.
   const worktree = isLinkedWorktree && toplevel ? path.basename(toplevel) : null;
 
   return { branch, worktree };

@@ -17,23 +17,23 @@ async function captureRun({ stdin = '{}', env = {} } = {}) {
   const orig = process.stdout.write.bind(process.stdout);
   process.stdout.write = (chunk) => { written.push(String(chunk)); return true; };
   try {
-    // CONTEXT_BAR_NO_UPDATE_CHECK keeps the orchestrator from touching
+    // CONTEXT_BART_NO_UPDATE_CHECK keeps the orchestrator from touching
     // the real user's cache dir or spawning background npm fetches
     // during the test suite. Tests that need to exercise the notifier
     // override it explicitly.
-    await run({ stdin, env: { NO_COLOR: '1', CONTEXT_BAR_NO_UPDATE_CHECK: '1', ...env } });
+    await run({ stdin, env: { NO_COLOR: '1', CONTEXT_BART_NO_UPDATE_CHECK: '1', ...env } });
   } finally {
     process.stdout.write = orig;
   }
   return written.join('');
 }
 
-test('run: env adapter renders from CONTEXT_BAR_* with no stdin', async () => {
+test('run: env adapter renders from CONTEXT_BART_* with no stdin', async () => {
   const out = await captureRun({
     env: {
-      CONTEXT_BAR_USED_TOKENS: '60000',
-      CONTEXT_BAR_WINDOW_TOKENS: '200000',
-      CONTEXT_BAR_MODEL_NAME: 'Custom',
+      CONTEXT_BART_USED_TOKENS: '60000',
+      CONTEXT_BART_WINDOW_TOKENS: '200000',
+      CONTEXT_BART_MODEL_NAME: 'Custom',
     },
   });
   assert.match(out, /30%/);  // 60k/200k = 30% → yellow approaching
@@ -68,7 +68,7 @@ test('run: exceeds_200k_tokens flag forces 1M window', async () => {
   assert.match(out, /\/1M/);
 });
 
-test('run: CONTEXT_BAR_WINDOW_TOKENS env override beats everything', async () => {
+test('run: CONTEXT_BART_WINDOW_TOKENS env override beats everything', async () => {
   const stdin = JSON.stringify({
     transcript_path: '/no/such/file.jsonl',
     model: { id: 'claude-opus-4-7[1m]' },
@@ -76,7 +76,7 @@ test('run: CONTEXT_BAR_WINDOW_TOKENS env override beats everything', async () =>
   });
   const out = await captureRun({
     stdin,
-    env: { CONTEXT_BAR_WINDOW_TOKENS: '400000' },
+    env: { CONTEXT_BART_WINDOW_TOKENS: '400000' },
   });
   assert.match(out, /\/400k/);
 });
@@ -112,7 +112,7 @@ test('run: missing transcript still produces a 0% bar', async () => {
 test('run: garbage stdin coerces to env adapter and still renders', async () => {
   const out = await captureRun({
     stdin: 'this is not json at all !!!',
-    env: { CONTEXT_BAR_USED_TOKENS: '10000', CONTEXT_BAR_WINDOW_TOKENS: '200000' },
+    env: { CONTEXT_BART_USED_TOKENS: '10000', CONTEXT_BART_WINDOW_TOKENS: '200000' },
   });
   assert.match(out, /5%/);
 });

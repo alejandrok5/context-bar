@@ -43,7 +43,7 @@ body:
         Run the script with the same payload the host sent, redact any
         absolute paths / user identifiers, and paste here. If you don't
         have the payload handy, capture it with:
-        `tee /tmp/last-payload.json | node /path/to/context-bar/bin/context-bar.js`
+        `tee /tmp/last-payload.json | node /path/to/context-bart/bin/context-bart.js`
       render: json
     validations:
       required: true
@@ -51,7 +51,7 @@ body:
   - type: textarea
     id: output
     attributes:
-      label: What context-bar printed
+      label: What context-bart printed
       description: Copy the exact line (or error message) the script wrote to stdout.
       render: text
     validations:

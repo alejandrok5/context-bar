@@ -7,7 +7,7 @@ body:
       value: |
         See README → "Add a new host adapter" for the contract.
         The generic env adapter probably already works for your host —
-        try setting `CONTEXT_BAR_*` env vars before opening this issue.
+        try setting `CONTEXT_BART_*` env vars before opening this issue.
 
   - type: input
     id: host

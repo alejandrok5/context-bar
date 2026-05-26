@@ -2,7 +2,7 @@
 'use strict';
 
 // Microbenchmark for the status-line pipeline. Generates a ~5 MB
-// transcript fixture, then spawns bin/context-bar.js N times against
+// transcript fixture, then spawns bin/context-bart.js N times against
 // it and reports the wall-clock distribution. The fixture lives under
 // os.tmpdir() and is removed on exit.
 //
@@ -15,7 +15,7 @@ const { spawnSync } = require('child_process');
 
 const ITERATIONS = Math.max(5, parseInt(process.argv[2], 10) || 30);
 const TARGET_SIZE = 5 * 1024 * 1024;
-const BIN = path.join(__dirname, '..', 'bin', 'context-bar.js');
+const BIN = path.join(__dirname, '..', 'bin', 'context-bart.js');
 
 function buildFixture() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-bench-'));

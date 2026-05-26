@@ -12,12 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Once-a-day update notifier. When a newer version is on npm, the bar
   appends a dim `↑x.y.z` segment (or `^x.y.z` in non-UTF locales) so
-  users know it's time to `npm update -g context-bar`. The check runs
+  users know it's time to `npm update -g context-bart`. The check runs
   in a detached background process — stdout is already flushed before
   the fetch is kicked, so a slow registry can never delay a status-bar
-  refresh. Cached in `${XDG_CACHE_HOME:-~/.cache}/context-bar/latest.json`
-  (or `%LOCALAPPDATA%\context-bar\` on Windows); opt out with
-  `CONTEXT_BAR_NO_UPDATE_CHECK=1`. Zero new runtime dependencies — the
+  refresh. Cached in `${XDG_CACHE_HOME:-~/.cache}/context-bart/latest.json`
+  (or `%LOCALAPPDATA%\context-bart\` on Windows); opt out with
+  `CONTEXT_BART_NO_UPDATE_CHECK=1`. Zero new runtime dependencies — the
   fetch uses Node's `https` stdlib.
 
 ## [0.1.3] - 2026-05-25

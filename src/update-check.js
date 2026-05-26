@@ -9,7 +9,7 @@
 // Background path: maybeKickFetch() spawns a detached child to refresh
 // the cache when stale. The parent does NOT wait for it; the next bar
 // render picks up the new value. We isolate the network fetch into its
-// own script (bin/context-bar-update-check.js) so an open socket can't
+// own script (bin/context-bart-update-check.js) so an open socket can't
 // keep the parent's event loop alive past the render.
 
 const fs = require('fs');
@@ -20,7 +20,7 @@ const { spawn } = require('child_process');
 const REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24h
 
 function isOptedOut(env) {
-  const v = env.CONTEXT_BAR_NO_UPDATE_CHECK;
+  const v = env.CONTEXT_BART_NO_UPDATE_CHECK;
   return v != null && v !== '' && v !== '0' && v !== 'false';
 }
 
@@ -30,10 +30,10 @@ function isOptedOut(env) {
 function cacheDir(env = process.env, platform = process.platform) {
   if (platform === 'win32') {
     const base = env.LOCALAPPDATA || env.APPDATA || os.tmpdir();
-    return path.join(base, 'context-bar');
+    return path.join(base, 'context-bart');
   }
   const base = env.XDG_CACHE_HOME || path.join(os.homedir() || os.tmpdir(), '.cache');
-  return path.join(base, 'context-bar');
+  return path.join(base, 'context-bart');
 }
 
 function cachePath(env = process.env, platform = process.platform) {
@@ -82,7 +82,7 @@ function statMtime(file) {
 //   { latest: '0.2.0' }  — show the indicator
 //   null                  — nothing to show
 //
-// `currentVersion` is the version of context-bar that's running right
+// `currentVersion` is the version of context-bart that's running right
 // now (read from package.json by the caller). We compare against it
 // rather than against the version recorded in the cache, so an upgrade
 // silently clears the notification even before the next 24h fetch.
@@ -130,7 +130,7 @@ function maybeKickFetch({ env = process.env, currentVersion, scriptDir } = {}) {
   // src/index.js) so we don't depend on this file's own __dirname being
   // correct across bundlers or symlinked installs.
   const dir = scriptDir || __dirname;
-  const fetcher = path.resolve(dir, '..', 'bin', 'context-bar-update-check.js');
+  const fetcher = path.resolve(dir, '..', 'bin', 'context-bart-update-check.js');
 
   try {
     const child = spawn(process.execPath, [fetcher, currentVersion, file], {

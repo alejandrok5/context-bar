@@ -55,7 +55,7 @@ async function run({ env = process.env, stdin } = {}) {
     ? partial.usedTokens
     : (transcriptUsage != null ? transcriptUsage : 0);
   const windowSize = partial.windowSize
-    || detectWindowSize(modelId, env.CONTEXT_BAR_WINDOW_TOKENS, {
+    || detectWindowSize(modelId, env.CONTEXT_BART_WINDOW_TOKENS, {
       usedTokens,
       exceeds200k: partial.exceeds200k,
     });

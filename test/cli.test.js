@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const BIN = path.join(__dirname, '..', 'bin', 'context-bar.js');
+const BIN = path.join(__dirname, '..', 'bin', 'context-bart.js');
 const FIXTURE = path.join(__dirname, 'fixtures', 'claude-usage.jsonl');
 
 function runCli(stdin, extraEnv = {}) {
@@ -20,7 +20,7 @@ function runCli(stdin, extraEnv = {}) {
     encoding: 'utf8',
     // Opt the smoke tests out of the update notifier so we don't write
     // to the real ~/.cache or spawn detached fetchers that hit npm.
-    env: { ...process.env, NO_COLOR: '1', CONTEXT_BAR_NO_UPDATE_CHECK: '1', ...extraEnv },
+    env: { ...process.env, NO_COLOR: '1', CONTEXT_BART_NO_UPDATE_CHECK: '1', ...extraEnv },
   });
 }
 

@@ -1,14 +1,14 @@
 {
-  "name": "context-bar",
+  "name": "context-bart",
   "version": "0.2.0",
   "description": "Smart Zone / Dumb Zone context-window meter for Claude Code, OpenCode, Codex, and other AI coding agents",
   "bin": {
-    "context-bar": "bin/context-bar.js"
+    "context-bart": "bin/context-bart.js"
   },
   "main": "src/index.js",
   "scripts": {
     "test": "node --test",
-    "smoke": "echo '{}' | node bin/context-bar.js",
+    "smoke": "echo '{}' | node bin/context-bart.js",
     "lint": "eslint src test",
     "bench": "node scripts/bench.js"
   },
@@ -19,11 +19,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alejandrok5/context-bar.git"
+    "url": "git+https://github.com/alejandrok5/context-bart.git"
   },
-  "homepage": "https://github.com/alejandrok5/context-bar",
+  "homepage": "https://github.com/alejandrok5/context-bart",
   "bugs": {
-    "url": "https://github.com/alejandrok5/context-bar/issues"
+    "url": "https://github.com/alejandrok5/context-bart/issues"
   },
   "keywords": [
     "claude-code",

@@ -2,19 +2,19 @@
 
 Claude Code reads a `statusLine` block from `~/.claude/settings.json`.
 
-## 1. Install context-bar
+## 1. Install context-bart
 
 Either:
 
 ```bash
-npm install -g context-bar
-which context-bar    # note the path it prints
+npm install -g context-bart
+which context-bart    # note the path it prints
 ```
 
 Or:
 
 ```bash
-git clone https://github.com/alejandrok5/context-bar.git ~/context-bar
+git clone https://github.com/alejandrok5/context-bart.git ~/context-bart
 ```
 
 ## 2. Edit `~/.claude/settings.json`
@@ -25,7 +25,7 @@ Add the `statusLine` block at the top level. Pick the form that matches how you 
 {
   "statusLine": {
     "type": "command",
-    "command": "/Users/<you>/.npm-global/bin/context-bar",
+    "command": "/Users/<you>/.npm-global/bin/context-bart",
     "padding": 1
   }
 }
@@ -37,7 +37,7 @@ Add the `statusLine` block at the top level. Pick the form that matches how you 
 {
   "statusLine": {
     "type": "command",
-    "command": "node /Users/<you>/context-bar/bin/context-bar.js",
+    "command": "node /Users/<you>/context-bart/bin/context-bart.js",
     "padding": 1
   }
 }
@@ -70,5 +70,5 @@ The script reads the JSONL transcript to compute current context usage. The tran
 
 - **Bar doesn't appear**: confirm `which node` returns a Node 18+ binary; absolute paths matter inside `settings.json` because Claude Code runs the command without your shell's `PATH`.
 - **Always shows 0%**: the script can't find the transcript — verify `transcript_path` is what your version of Claude Code emits (look at the latest line in `~/.claude/projects/.../*.jsonl`).
-- **Colors look weird**: set `"command": "NO_COLOR=1 node /path/to/bin/context-bar.js"` or `export NO_COLOR=1` in your shell.
+- **Colors look weird**: set `"command": "NO_COLOR=1 node /path/to/bin/context-bart.js"` or `export NO_COLOR=1` in your shell.
 - **Slow status bar**: this script aims for <50ms. If it's slow, your transcript file is unusually large; trim with `/compact`.

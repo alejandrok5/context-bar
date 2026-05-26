@@ -1,6 +1,6 @@
 'use strict';
 
-// Generic fallback adapter. Reads everything from CONTEXT_BAR_* env vars.
+// Generic fallback adapter. Reads everything from CONTEXT_BART_* env vars.
 // Use this for any host not covered by a dedicated adapter, as long as
 // the host can set env vars before invoking the script.
 
@@ -21,13 +21,13 @@ function parse(_stdin, env) {
   try { pcwd = process.cwd(); } catch { /* unreadable cwd */ }
   return {
     source: NAME,
-    modelId: e.CONTEXT_BAR_MODEL_ID || null,
-    modelDisplayName: e.CONTEXT_BAR_MODEL_NAME || null,
-    usedTokens: parseIntOrNull(e.CONTEXT_BAR_USED_TOKENS),
-    windowSize: parseIntOrNull(e.CONTEXT_BAR_WINDOW_TOKENS),
-    costUsd: parseFloatOrNull(e.CONTEXT_BAR_COST_USD),
-    cwd: e.CONTEXT_BAR_CWD || pcwd || e.PWD || null,
-    transcriptPath: e.CONTEXT_BAR_TRANSCRIPT_PATH || null,
+    modelId: e.CONTEXT_BART_MODEL_ID || null,
+    modelDisplayName: e.CONTEXT_BART_MODEL_NAME || null,
+    usedTokens: parseIntOrNull(e.CONTEXT_BART_USED_TOKENS),
+    windowSize: parseIntOrNull(e.CONTEXT_BART_WINDOW_TOKENS),
+    costUsd: parseFloatOrNull(e.CONTEXT_BART_COST_USD),
+    cwd: e.CONTEXT_BART_CWD || pcwd || e.PWD || null,
+    transcriptPath: e.CONTEXT_BART_TRANSCRIPT_PATH || null,
   };
 }
 

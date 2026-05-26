@@ -54,31 +54,31 @@ test('compareSemver: unparseable inputs compare as equal (safe default)', () => 
 });
 
 test('isOptedOut: truthy values disable, 0/false/empty/unset do not', () => {
-  assert.equal(isOptedOut({ CONTEXT_BAR_NO_UPDATE_CHECK: '1' }), true);
-  assert.equal(isOptedOut({ CONTEXT_BAR_NO_UPDATE_CHECK: 'true' }), true);
-  assert.equal(isOptedOut({ CONTEXT_BAR_NO_UPDATE_CHECK: 'yes' }), true);
-  assert.equal(isOptedOut({ CONTEXT_BAR_NO_UPDATE_CHECK: '0' }), false);
-  assert.equal(isOptedOut({ CONTEXT_BAR_NO_UPDATE_CHECK: 'false' }), false);
-  assert.equal(isOptedOut({ CONTEXT_BAR_NO_UPDATE_CHECK: '' }), false);
+  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: '1' }), true);
+  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: 'true' }), true);
+  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: 'yes' }), true);
+  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: '0' }), false);
+  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: 'false' }), false);
+  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: '' }), false);
   assert.equal(isOptedOut({}), false);
 });
 
 test('cacheDir: respects XDG_CACHE_HOME on linux', () => {
   const dir = '/some/cache';
-  assert.equal(cacheDir({ XDG_CACHE_HOME: dir }, 'linux'), path.join(dir, 'context-bar'));
+  assert.equal(cacheDir({ XDG_CACHE_HOME: dir }, 'linux'), path.join(dir, 'context-bart'));
 });
 
 test('cacheDir: uses LOCALAPPDATA on win32', () => {
   const win = cacheDir({ LOCALAPPDATA: 'C:\\Users\\me\\AppData\\Local' }, 'win32');
   // path.join normalizes separators per the host platform, so just
   // assert both halves are present.
-  assert.ok(win.includes('context-bar'));
+  assert.ok(win.includes('context-bart'));
   assert.ok(win.includes('AppData'));
 });
 
 test('cacheDir: falls back to APPDATA when LOCALAPPDATA is missing on win32', () => {
   const win = cacheDir({ APPDATA: 'C:\\Users\\me\\AppData\\Roaming' }, 'win32');
-  assert.ok(win.includes('context-bar'));
+  assert.ok(win.includes('context-bart'));
   assert.ok(win.includes('Roaming'));
 });
 
@@ -120,7 +120,7 @@ test('readCachedUpdate: cache that omits `latest` returns null', () => {
 
 test('readCachedUpdate: opt-out env var short-circuits even with valid cache', () => {
   const dir = tmpDir('cb-upd-');
-  const env = envWith(dir, { CONTEXT_BAR_NO_UPDATE_CHECK: '1' });
+  const env = envWith(dir, { CONTEXT_BART_NO_UPDATE_CHECK: '1' });
   writeCache(env, { latest: '99.99.99' });
   assert.equal(readCachedUpdate({ env, currentVersion: '0.1.3' }), null);
 });
@@ -134,7 +134,7 @@ test('readCachedUpdate: missing currentVersion returns null', () => {
 
 test('maybeKickFetch: opt-out skips the spawn', () => {
   const dir = tmpDir('cb-upd-');
-  const env = envWith(dir, { CONTEXT_BAR_NO_UPDATE_CHECK: '1' });
+  const env = envWith(dir, { CONTEXT_BART_NO_UPDATE_CHECK: '1' });
   assert.equal(maybeKickFetch({ env, currentVersion: '0.1.3' }), false);
   assert.equal(fs.existsSync(cachePath(env)), false);
 });

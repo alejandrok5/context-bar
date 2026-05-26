@@ -25,7 +25,7 @@ function pickZone(pct, thresholds = DEFAULT_THRESHOLDS) {
   return { ...ZONES.dumb, key: 'dumb' };
 }
 
-// Parse CONTEXT_BAR_ZONE_SMART / CONTEXT_BAR_ZONE_DUMB env vars into a
+// Parse CONTEXT_BART_ZONE_SMART / CONTEXT_BART_ZONE_DUMB env vars into a
 // {smart, dumb} threshold pair. Any invalid value (NaN, out of (0, 100),
 // or smart >= dumb) falls back to the defaults so the bar still renders
 // sensibly with broken config.
@@ -36,8 +36,8 @@ function readThresholds(env) {
     if (!Number.isFinite(n) || n <= 0 || n >= 100) return null;
     return n;
   };
-  const smart = parse(env.CONTEXT_BAR_ZONE_SMART);
-  const dumb = parse(env.CONTEXT_BAR_ZONE_DUMB);
+  const smart = parse(env.CONTEXT_BART_ZONE_SMART);
+  const dumb = parse(env.CONTEXT_BART_ZONE_DUMB);
   const finalSmart = smart != null ? smart : DEFAULT_THRESHOLDS.smart;
   const finalDumb = dumb != null ? dumb : DEFAULT_THRESHOLDS.dumb;
   if (finalSmart >= finalDumb) return DEFAULT_THRESHOLDS;
@@ -74,7 +74,7 @@ function buildBar(pct, color, useColor, useAscii = false) {
 // Color precedence:
 //   1. FORCE_COLOR overrides everything (npm/supports-color convention).
 //      FORCE_COLOR=0/false/"" disables; any other value enables.
-//   2. NO_COLOR / CONTEXT_BAR_NO_COLOR disable.
+//   2. NO_COLOR / CONTEXT_BART_NO_COLOR disable.
 //   3. Default: enabled.
 //
 // We do NOT auto-disable on process.stdout.isTTY === false. The primary
@@ -88,17 +88,17 @@ function shouldUseColor(env) {
     return !(fc === '0' || fc === 'false');
   }
   if (env.NO_COLOR != null && env.NO_COLOR !== '') return false;
-  if (env.CONTEXT_BAR_NO_COLOR != null && env.CONTEXT_BAR_NO_COLOR !== '') return false;
+  if (env.CONTEXT_BART_NO_COLOR != null && env.CONTEXT_BART_NO_COLOR !== '') return false;
   return true;
 }
 
 // Render with [#####-----] instead of [▰▰▰▰▰▱▱▱▱▱] when the user opts in
-// via CONTEXT_BAR_ASCII, or when their locale doesn't advertise UTF-8.
+// via CONTEXT_BART_ASCII, or when their locale doesn't advertise UTF-8.
 // Some terminals (older Windows cmd, minimal busybox, SSH tunnels with a
 // stripped LANG) display the Unicode block glyphs as `??` or tofu, which
 // is uglier than plain ASCII.
 function shouldUseAscii(env) {
-  if (env.CONTEXT_BAR_ASCII != null && env.CONTEXT_BAR_ASCII !== '') return true;
+  if (env.CONTEXT_BART_ASCII != null && env.CONTEXT_BART_ASCII !== '') return true;
   const lc = (env.LC_ALL || env.LC_CTYPE || env.LANG || '');
   if (lc && !/utf-?8/i.test(lc)) return true;
   return false;

@@ -175,14 +175,14 @@ test('env: detect always matches', () => {
   assert.equal(env.detect(null, null), true);
 });
 
-test('env: parse reads CONTEXT_BAR_* vars', () => {
+test('env: parse reads CONTEXT_BART_* vars', () => {
   const out = env.parse({}, {
-    CONTEXT_BAR_MODEL_ID: 'custom-model',
-    CONTEXT_BAR_MODEL_NAME: 'Custom',
-    CONTEXT_BAR_USED_TOKENS: '99000',
-    CONTEXT_BAR_WINDOW_TOKENS: '128000',
-    CONTEXT_BAR_COST_USD: '0.25',
-    CONTEXT_BAR_CWD: '/work',
+    CONTEXT_BART_MODEL_ID: 'custom-model',
+    CONTEXT_BART_MODEL_NAME: 'Custom',
+    CONTEXT_BART_USED_TOKENS: '99000',
+    CONTEXT_BART_WINDOW_TOKENS: '128000',
+    CONTEXT_BART_COST_USD: '0.25',
+    CONTEXT_BART_CWD: '/work',
   });
   assert.equal(out.source, 'env');
   assert.equal(out.modelId, 'custom-model');

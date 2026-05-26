@@ -35,7 +35,7 @@ jobs:
       # Force bash so Windows runs them under Git Bash instead of pwsh.
       - name: Smoke test (empty stdin)
         shell: bash
-        run: echo '{}' | node bin/context-bar.js
+        run: echo '{}' | node bin/context-bart.js
 
       - name: Verify publish manifest (no test/ or .github/ leak)
         shell: bash

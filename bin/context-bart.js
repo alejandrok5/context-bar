@@ -8,6 +8,6 @@ run().catch((err) => {
   // Match the width of a normal bar so the status line doesn't visibly
   // shrink and shift surrounding tools when something fails. 10 empty
   // segments + '?%' mirrors the render() output.
-  process.stdout.write(`[▱▱▱▱▱▱▱▱▱▱] ?% · context-bar error: ${msg}\n`);
+  process.stdout.write(`[▱▱▱▱▱▱▱▱▱▱] ?% · context-bart error: ${msg}\n`);
   process.exit(0);
 });

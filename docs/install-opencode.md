@@ -7,7 +7,7 @@
 ## 1. Clone the repo
 
 ```bash
-git clone https://github.com/alejandrok5/context-bar.git ~/context-bar
+git clone https://github.com/alejandrok5/context-bart.git ~/context-bart
 ```
 
 ## 2. Wire it into OpenCode
@@ -17,7 +17,7 @@ Add to your OpenCode config (path varies by version — check `opencode --help` 
 ```json
 {
   "statusline": {
-    "command": "node /absolute/path/to/context-bar/bin/context-bar.js"
+    "command": "node /absolute/path/to/context-bart/bin/context-bart.js"
   }
 }
 ```
@@ -33,9 +33,9 @@ The bar should appear in your status area.
 If the OpenCode adapter doesn't pick up your tokens correctly, configure OpenCode to set these env vars before invoking the script:
 
 ```bash
-export CONTEXT_BAR_MODEL_ID="$OPENCODE_MODEL"
-export CONTEXT_BAR_USED_TOKENS="$OPENCODE_TOTAL_TOKENS"
-export CONTEXT_BAR_WINDOW_TOKENS=200000
+export CONTEXT_BART_MODEL_ID="$OPENCODE_MODEL"
+export CONTEXT_BART_USED_TOKENS="$OPENCODE_TOTAL_TOKENS"
+export CONTEXT_BART_WINDOW_TOKENS=200000
 ```
 
 The generic env adapter will take over and render the bar from those vars. See the main [README](../README.md) for the full list.
@@ -44,5 +44,5 @@ The generic env adapter will take over and render the bar from those vars. See t
 
 If your OpenCode payload differs from what the adapter expects, please:
 
-1. Run `echo '<payload-you-saw>' | node bin/context-bar.js` to see what's parsed.
+1. Run `echo '<payload-you-saw>' | node bin/context-bart.js` to see what's parsed.
 2. Open an issue with the redacted payload — we'll extend the adapter.

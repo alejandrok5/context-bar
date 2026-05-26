@@ -40,30 +40,30 @@ test('pickZone: custom thresholds shift the boundaries', () => {
 });
 
 test('readThresholds: env overrides parsed as percentages', () => {
-  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '50', CONTEXT_BAR_ZONE_DUMB: '80' }), { smart: 50, dumb: 80 });
-  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '25.5', CONTEXT_BAR_ZONE_DUMB: '60' }), { smart: 25.5, dumb: 60 });
+  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '50', CONTEXT_BART_ZONE_DUMB: '80' }), { smart: 50, dumb: 80 });
+  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '25.5', CONTEXT_BART_ZONE_DUMB: '60' }), { smart: 25.5, dumb: 60 });
 });
 
 test('readThresholds: missing values fall back to defaults', () => {
   assert.deepEqual(readThresholds({}), DEFAULT_THRESHOLDS);
   // Only smart set, paired with default dumb=40 → smart(50) >= dumb(40)
   // is nonsensical, so the whole pair falls back to defaults.
-  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '50' }), DEFAULT_THRESHOLDS);
+  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '50' }), DEFAULT_THRESHOLDS);
   // smart=20 with default dumb=40 is valid.
-  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '20' }), { smart: 20, dumb: 40 });
+  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '20' }), { smart: 20, dumb: 40 });
   // dumb=80 alone with default smart=30 is valid.
-  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_DUMB: '80' }), { smart: 30, dumb: 80 });
+  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_DUMB: '80' }), { smart: 30, dumb: 80 });
 });
 
 test('readThresholds: invalid values fall back to defaults', () => {
-  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: 'nope', CONTEXT_BAR_ZONE_DUMB: 'nope' }), DEFAULT_THRESHOLDS);
-  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '-10' }), DEFAULT_THRESHOLDS);
-  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '200' }), DEFAULT_THRESHOLDS);
+  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: 'nope', CONTEXT_BART_ZONE_DUMB: 'nope' }), DEFAULT_THRESHOLDS);
+  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '-10' }), DEFAULT_THRESHOLDS);
+  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '200' }), DEFAULT_THRESHOLDS);
 });
 
 test('readThresholds: smart >= dumb is rejected as nonsense', () => {
-  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '60', CONTEXT_BAR_ZONE_DUMB: '50' }), DEFAULT_THRESHOLDS);
-  assert.deepEqual(readThresholds({ CONTEXT_BAR_ZONE_SMART: '50', CONTEXT_BAR_ZONE_DUMB: '50' }), DEFAULT_THRESHOLDS);
+  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '60', CONTEXT_BART_ZONE_DUMB: '50' }), DEFAULT_THRESHOLDS);
+  assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '50', CONTEXT_BART_ZONE_DUMB: '50' }), DEFAULT_THRESHOLDS);
 });
 
 test('render: custom thresholds via env change zone selection', () => {
@@ -74,7 +74,7 @@ test('render: custom thresholds via env change zone selection', () => {
     usedTokens: 70_000, // 35%
     costUsd: null,
     branch: null,
-  }, { env: { NO_COLOR: '1', CONTEXT_BAR_ZONE_SMART: '50', CONTEXT_BAR_ZONE_DUMB: '80' } });
+  }, { env: { NO_COLOR: '1', CONTEXT_BART_ZONE_SMART: '50', CONTEXT_BART_ZONE_DUMB: '80' } });
   assert.match(out, /Smart Zone/);
 });
 
@@ -102,9 +102,9 @@ test('buildBar: ASCII mode uses # and - glyphs', () => {
   assert.equal(buildBar(100, 'red', false, true), '[##########]');
 });
 
-test('shouldUseAscii: CONTEXT_BAR_ASCII enables ASCII', () => {
-  assert.equal(shouldUseAscii({ CONTEXT_BAR_ASCII: '1' }), true);
-  assert.equal(shouldUseAscii({ CONTEXT_BAR_ASCII: 'true' }), true);
+test('shouldUseAscii: CONTEXT_BART_ASCII enables ASCII', () => {
+  assert.equal(shouldUseAscii({ CONTEXT_BART_ASCII: '1' }), true);
+  assert.equal(shouldUseAscii({ CONTEXT_BART_ASCII: 'true' }), true);
   assert.equal(shouldUseAscii({}), false);
 });
 
@@ -119,14 +119,14 @@ test('shouldUseAscii: UTF-8 locale uses Unicode glyphs', () => {
   assert.equal(shouldUseAscii({ LC_CTYPE: 'C.utf8' }), false);
 });
 
-test('render: CONTEXT_BAR_ASCII produces ASCII bar', () => {
+test('render: CONTEXT_BART_ASCII produces ASCII bar', () => {
   const out = render({
     modelDisplayName: 'Opus',
     windowSize: 200_000,
     usedTokens: 100_000,
     costUsd: null,
     branch: null,
-  }, { env: { NO_COLOR: '1', CONTEXT_BAR_ASCII: '1' } });
+  }, { env: { NO_COLOR: '1', CONTEXT_BART_ASCII: '1' } });
   assert.match(out, /\[#####-----\]/);
   assert.doesNotMatch(out, /▰|▱/);
 });
@@ -143,8 +143,8 @@ test('shouldUseColor: NO_COLOR disables color', () => {
   assert.equal(shouldUseColor({}), true);
 });
 
-test('shouldUseColor: CONTEXT_BAR_NO_COLOR also disables', () => {
-  assert.equal(shouldUseColor({ CONTEXT_BAR_NO_COLOR: '1' }), false);
+test('shouldUseColor: CONTEXT_BART_NO_COLOR also disables', () => {
+  assert.equal(shouldUseColor({ CONTEXT_BART_NO_COLOR: '1' }), false);
 });
 
 test('shouldUseColor: FORCE_COLOR=1 wins over NO_COLOR', () => {

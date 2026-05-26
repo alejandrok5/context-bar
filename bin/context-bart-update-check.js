@@ -17,7 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const REGISTRY_URL = 'https://registry.npmjs.org/context-bar/latest';
+const REGISTRY_URL = 'https://registry.npmjs.org/context-bart/latest';
 const TIMEOUT_MS = 5000;
 
 const [, , currentVersion, cacheFile] = process.argv;
@@ -43,7 +43,7 @@ function writeAtomic(file, contents) {
 }
 
 const req = https.get(REGISTRY_URL, {
-  headers: { 'accept': 'application/json', 'user-agent': `context-bar/${currentVersion}` },
+  headers: { 'accept': 'application/json', 'user-agent': `context-bart/${currentVersion}` },
 }, (res) => {
   if (res.statusCode !== 200) {
     res.resume();

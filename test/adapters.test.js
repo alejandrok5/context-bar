@@ -90,6 +90,16 @@ test('opencode: detect rejects Claude Code payloads (has transcript_path)', () =
   }, {}), false);
 });
 
+test('opencode: stale OPENCODE_SESSION env does not hijack a Claude payload', () => {
+  // Regression: previously OPENCODE_SESSION alone returned true, which
+  // would mis-route a Claude Code payload (transcript_path present) when
+  // the user had a leftover export from a different shell.
+  assert.equal(opencode.detect({
+    transcript_path: '/x.jsonl',
+    model: { id: 'claude-opus-4-7[1m]' },
+  }, { OPENCODE_SESSION: 'abc' }), false);
+});
+
 test('opencode: parse extracts usage and model from session', () => {
   const out = opencode.parse({
     session: {

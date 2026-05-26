@@ -13,14 +13,20 @@
 const NAME = 'opencode';
 
 function detect(stdin, env) {
-  if (env && env.OPENCODE_SESSION) return true;
+  // A leftover OPENCODE_SESSION in the parent env shouldn't override a
+  // Claude Code stdin payload — those always carry transcript_path. The
+  // adapter ordering in src/detect.js puts claudeCode first, so today
+  // we're already protected, but make the contract self-consistent so
+  // detection still works under any ordering.
+  const hasClaudeTranscript =
+    stdin && typeof stdin === 'object' && typeof stdin.transcript_path === 'string';
+  if (env && env.OPENCODE_SESSION && !hasClaudeTranscript) return true;
   if (!stdin || typeof stdin !== 'object') return false;
   // OpenCode payload signals: presence of `session` object with a `model`
   // field but no `transcript_path` (which would be Claude Code's signature).
   const hasOpenCodeSession =
     stdin.session && typeof stdin.session === 'object' && stdin.session.model;
-  const hasNoTranscript = !stdin.transcript_path;
-  if (hasOpenCodeSession && hasNoTranscript) return true;
+  if (hasOpenCodeSession && !hasClaudeTranscript) return true;
   // Alternative: a top-level `provider` field set to "opencode".
   if (stdin.provider === 'opencode' || stdin.host === 'opencode') return true;
   return false;

@@ -82,7 +82,44 @@ Restart Claude Code. The bar should appear at the bottom of your terminal sessio
 
 ## Configuration
 
-Most behavior is auto-detected. Use these env vars to override:
+Most behavior is auto-detected. Two ways to override:
+
+1. A **JSON config file** for "set once, forget" preferences.
+2. **Environment variables** for one-shot overrides (and for hosts that inject runtime data).
+
+Precedence is always **env var > config file > built-in default** — so a single `CONTEXT_BART_ASCII=1 …` invocation can still flip behavior without editing your config.
+
+### Config file
+
+Drop a `config.json` at:
+
+- Linux / macOS: `$XDG_CONFIG_HOME/context-bart/config.json` (default: `~/.config/context-bart/config.json`)
+- Windows: `%APPDATA%\context-bart\config.json`
+
+Every field is optional; missing fields fall through to the defaults. Invalid values are silently dropped (the bar still renders).
+
+```json
+{
+  "zones": { "smart": 30, "dumb": 40 },
+  "windowTokens": null,
+  "ascii": false,
+  "updateCheck": true,
+  "color": "auto"
+}
+```
+
+| Field | Default | What it does |
+| --- | --- | --- |
+| `zones.smart` | `30` | Smart→approaching threshold (% of window). Must be in (0, 100) and less than `zones.dumb`. |
+| `zones.dumb` | `40` | approaching→Dumb threshold (% of window). |
+| `windowTokens` | `null` | Pin the context window size (e.g. `200000`, `1000000`). `null` keeps auto-detection. |
+| `ascii` | `false` | Force ASCII glyphs (`[#####-----]`) instead of Unicode (`[▰▰▰▰▰▱▱▱▱▱]`). Auto-on regardless when `LANG` is non-UTF-8. |
+| `updateCheck` | `true` | Set to `false` to disable the once-a-day npm version check. |
+| `color` | `"auto"` | `"auto"` follows `NO_COLOR` / `FORCE_COLOR`; `"never"` always disables; `"always"` always enables. |
+
+### Environment variable overrides
+
+Every config field has a matching env var for one-shot overrides:
 
 | Env var | Default | What it does |
 | --- | --- | --- |
@@ -91,7 +128,7 @@ Most behavior is auto-detected. Use these env vars to override:
 | `FORCE_COLOR` | unset | Force color on (overrides `NO_COLOR`). Set to `0`/`false` to force off. |
 | `CONTEXT_BART_ZONE_SMART` | `30` | Smart→approaching threshold (% of window). |
 | `CONTEXT_BART_ZONE_DUMB` | `40` | approaching→Dumb threshold (% of window). |
-| `CONTEXT_BART_ASCII` | auto | Force ASCII glyphs (`[#####-----]`) instead of Unicode (`[▰▰▰▰▰▱▱▱▱▱]`). Auto-on when `LANG` is non-UTF-8. |
+| `CONTEXT_BART_ASCII` | auto | Force ASCII glyphs. Auto-on when `LANG` is non-UTF-8. |
 | `CONTEXT_BART_NO_UPDATE_CHECK` | unset | Disable the once-a-day version check that appends a dim `↑x.y.z` segment when a newer release is on npm. |
 | `CONTEXT_BART_USED_TOKENS` | n/a | (env adapter only) Used tokens count. |
 | `CONTEXT_BART_MODEL_ID` | n/a | (env adapter only) Model id. |
@@ -99,6 +136,10 @@ Most behavior is auto-detected. Use these env vars to override:
 | `CONTEXT_BART_COST_USD` | n/a | (env adapter only) Cumulative cost. |
 | `CONTEXT_BART_CWD` | `$PWD` | (env adapter only) Working dir for git branch lookup. |
 | `CONTEXT_BART_TRANSCRIPT_PATH` | n/a | (env adapter only) JSONL transcript to parse. |
+
+### Why both a config file and env vars?
+
+The env-adapter vars in the bottom half of the table above (`CONTEXT_BART_USED_TOKENS`, `..._MODEL_ID`, etc.) carry per-invocation state that the host injects on every render — they can't live in a static file. The preference vars at the top (zones, ASCII, color, update-check) are the ones the config file replaces, and they're still honored on the env side so you can do a quick one-off override (`CONTEXT_BART_ASCII=1 …`) without editing your saved settings.
 
 ## How "used tokens" is computed
 

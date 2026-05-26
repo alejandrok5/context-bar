@@ -19,9 +19,12 @@ const { spawn } = require('child_process');
 
 const REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24h
 
-function isOptedOut(env) {
+function isOptedOut(env, config = null) {
   const v = env.CONTEXT_BART_NO_UPDATE_CHECK;
-  return v != null && v !== '' && v !== '0' && v !== 'false';
+  if (v != null && v !== '') return v !== '0' && v !== 'false';
+  // Env unset → consult config file. updateCheck=false means "opt out".
+  if (config && config.updateCheck === false) return true;
+  return false;
 }
 
 // Resolve the cache directory across platforms. We use a separate
@@ -86,8 +89,8 @@ function statMtime(file) {
 // now (read from package.json by the caller). We compare against it
 // rather than against the version recorded in the cache, so an upgrade
 // silently clears the notification even before the next 24h fetch.
-function readCachedUpdate({ env = process.env, currentVersion } = {}) {
-  if (isOptedOut(env)) return null;
+function readCachedUpdate({ env = process.env, currentVersion, config = null } = {}) {
+  if (isOptedOut(env, config)) return null;
   if (!currentVersion) return null;
   const file = cachePath(env);
   const cached = readCache(file);
@@ -100,8 +103,8 @@ function readCachedUpdate({ env = process.env, currentVersion } = {}) {
 // the user hasn't opted out, spawn a detached worker to refresh it.
 // Returns true if a worker was spawned, false otherwise — exposed so
 // tests can assert behavior without inspecting child processes.
-function maybeKickFetch({ env = process.env, currentVersion, scriptDir } = {}) {
-  if (isOptedOut(env)) return false;
+function maybeKickFetch({ env = process.env, currentVersion, scriptDir, config = null } = {}) {
+  if (isOptedOut(env, config)) return false;
   if (!currentVersion) return false;
   const file = cachePath(env);
   const age = Date.now() - statMtime(file);

@@ -68,6 +68,24 @@ test('isOptedOut: truthy values disable, 0/false/empty/unset do not', () => {
   assert.equal(isOptedOut({}), false);
 });
 
+test('isOptedOut: config.updateCheck=false opts out when env unset', () => {
+  assert.equal(isOptedOut({}, { updateCheck: false }), true);
+});
+
+test('isOptedOut: config.updateCheck=true is the same as no opt-out', () => {
+  assert.equal(isOptedOut({}, { updateCheck: true }), false);
+});
+
+test('isOptedOut: env=0 wins over config.updateCheck=false (re-enable via env)', () => {
+  // A user with updateCheck=false in their config can still re-enable
+  // on a one-shot basis by setting CONTEXT_BART_NO_UPDATE_CHECK=0.
+  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: '0' }, { updateCheck: false }), false);
+});
+
+test('isOptedOut: env=1 wins over config.updateCheck=true (one-shot disable)', () => {
+  assert.equal(isOptedOut({ CONTEXT_BART_NO_UPDATE_CHECK: '1' }, { updateCheck: true }), true);
+});
+
 test('cacheDir: respects XDG_CACHE_HOME on linux', () => {
   const dir = '/some/cache';
   assert.equal(cacheDir({ XDG_CACHE_HOME: dir }, 'linux'), path.join(dir, 'context-bart'));

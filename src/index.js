@@ -6,6 +6,7 @@ const { getBranchAndWorktree } = require('./git');
 const { render } = require('./render');
 const { detectWindowSize, prettyModelName } = require('./window');
 const { readCachedUpdate, maybeKickFetch } = require('./update-check');
+const { loadConfig } = require('./config');
 
 // Read package.json once at module load. Used by the update notifier
 // to compare against the cached `latest` from the npm registry. We
@@ -36,11 +37,14 @@ function safeParseJson(s) {
   try { return JSON.parse(s); } catch { return {}; }
 }
 
-async function run({ env = process.env, stdin } = {}) {
+async function run({ env = process.env, stdin, config } = {}) {
   const raw = stdin != null ? stdin : await readStdin();
   const parsed = safeParseJson(raw);
   const adapter = pickAdapter(parsed, env);
   const partial = adapter.parse(parsed, env) || {};
+  // Read the user-pref JSON once per invocation. Synchronous, tiny file.
+  // Callers (mostly tests) can inject a pre-built config to bypass disk.
+  const cfg = config !== undefined ? config : loadConfig();
 
   const modelId = partial.modelId || null;
   // Compute used tokens FIRST so we can use them to detect the window size.
@@ -58,7 +62,7 @@ async function run({ env = process.env, stdin } = {}) {
     || detectWindowSize(modelId, env.CONTEXT_BART_WINDOW_TOKENS, {
       usedTokens,
       exceeds200k: partial.exceeds200k,
-    });
+    }, cfg);
   const modelDisplayName = partial.modelDisplayName
     || prettyModelName(modelId, partial.modelDisplayName);
   const { branch: detectedBranch, worktree: detectedWorktree } =
@@ -69,7 +73,7 @@ async function run({ env = process.env, stdin } = {}) {
   // `main@worktree_3` when we're in a linked worktree.
   const branchDisplay = branch && worktree ? `${branch}@${worktree}` : branch;
 
-  const update = readCachedUpdate({ env, currentVersion: CURRENT_VERSION });
+  const update = readCachedUpdate({ env, currentVersion: CURRENT_VERSION, config: cfg });
 
   const payload = {
     modelId,
@@ -83,12 +87,12 @@ async function run({ env = process.env, stdin } = {}) {
     updateAvailable: update ? update.latest : null,
   };
 
-  const line = render(payload, { env });
+  const line = render(payload, { env, config: cfg });
   process.stdout.write(line + '\n');
 
   // Kick the background refresh AFTER the bar is on the wire so even a
   // spawn-syscall hiccup can't delay the user-visible render.
-  maybeKickFetch({ env, currentVersion: CURRENT_VERSION, scriptDir: __dirname });
+  maybeKickFetch({ env, currentVersion: CURRENT_VERSION, scriptDir: __dirname, config: cfg });
 }
 
 module.exports = { run, safeParseJson, readStdin };

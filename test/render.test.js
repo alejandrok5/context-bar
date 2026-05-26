@@ -66,6 +66,81 @@ test('readThresholds: smart >= dumb is rejected as nonsense', () => {
   assert.deepEqual(readThresholds({ CONTEXT_BART_ZONE_SMART: '50', CONTEXT_BART_ZONE_DUMB: '50' }), DEFAULT_THRESHOLDS);
 });
 
+test('readThresholds: config used when env is unset', () => {
+  const cfg = { zones: { smart: 25, dumb: 70 } };
+  assert.deepEqual(readThresholds({}, cfg), { smart: 25, dumb: 70 });
+});
+
+test('readThresholds: env value wins over config', () => {
+  const cfg = { zones: { smart: 25, dumb: 70 } };
+  assert.deepEqual(
+    readThresholds({ CONTEXT_BART_ZONE_SMART: '10', CONTEXT_BART_ZONE_DUMB: '20' }, cfg),
+    { smart: 10, dumb: 20 },
+  );
+});
+
+test('readThresholds: env partial + config partial blend correctly', () => {
+  // env supplies smart, config supplies dumb.
+  const cfg = { zones: { smart: 99, dumb: 65 } };
+  assert.deepEqual(
+    readThresholds({ CONTEXT_BART_ZONE_SMART: '15' }, cfg),
+    { smart: 15, dumb: 65 },
+  );
+});
+
+test('readThresholds: null/empty config falls through to defaults', () => {
+  assert.deepEqual(readThresholds({}, null), DEFAULT_THRESHOLDS);
+  assert.deepEqual(readThresholds({}, { zones: null }), DEFAULT_THRESHOLDS);
+});
+
+test('shouldUseAscii: config.ascii=true enables ASCII when env unset', () => {
+  assert.equal(shouldUseAscii({}, { ascii: true }), true);
+});
+
+test('shouldUseAscii: env empty does NOT trigger ASCII via config absence', () => {
+  // CONTEXT_BART_ASCII unset + UTF-8 locale + no config → Unicode.
+  assert.equal(shouldUseAscii({ LANG: 'en_US.UTF-8' }, { ascii: false }), false);
+  assert.equal(shouldUseAscii({ LANG: 'en_US.UTF-8' }, null), false);
+});
+
+test('shouldUseColor: config.color=never disables color when env unset', () => {
+  assert.equal(shouldUseColor({}, { color: 'never' }), false);
+});
+
+test('shouldUseColor: NO_COLOR env wins over config.color=always', () => {
+  assert.equal(shouldUseColor({ NO_COLOR: '1' }, { color: 'always' }), false);
+});
+
+test('shouldUseColor: FORCE_COLOR=1 wins over config.color=never', () => {
+  assert.equal(shouldUseColor({ FORCE_COLOR: '1' }, { color: 'never' }), true);
+});
+
+test('render: config thresholds take effect when env is empty', () => {
+  // At 35% with defaults (30/40) we'd be yellow; with config 50/80 we should be green.
+  const out = render({
+    modelDisplayName: 'X',
+    windowSize: 200_000,
+    usedTokens: 70_000, // 35%
+    costUsd: null,
+    branch: null,
+  }, { env: { NO_COLOR: '1' }, config: { zones: { smart: 50, dumb: 80 } } });
+  assert.match(out, /Smart Zone/);
+  // No yellow ANSI, no Dumb Zone label — green Smart Zone.
+  assert.doesNotMatch(out, /Dumb Zone/);
+});
+
+test('render: config.ascii=true produces ASCII bar without env var', () => {
+  const out = render({
+    modelDisplayName: 'Opus',
+    windowSize: 200_000,
+    usedTokens: 100_000,
+    costUsd: null,
+    branch: null,
+  }, { env: { NO_COLOR: '1', LANG: 'en_US.UTF-8' }, config: { ascii: true } });
+  assert.match(out, /\[#####-----\]/);
+  assert.doesNotMatch(out, /▰|▱/);
+});
+
 test('render: custom thresholds via env change zone selection', () => {
   // At 35% with defaults (30/40) we'd be yellow; with 50/80 we should be green.
   const out = render({

@@ -63,6 +63,33 @@ test('detectWindowSize: [1m] suffix still wins over no signals', () => {
   assert.equal(detectWindowSize('claude-opus-4-7[1m]', null, {}), 1_000_000);
 });
 
+test('detectWindowSize: config.windowTokens used when env override is empty', () => {
+  assert.equal(
+    detectWindowSize('claude-opus-4-7', null, {}, { windowTokens: 750_000 }),
+    750_000,
+  );
+});
+
+test('detectWindowSize: env override beats config.windowTokens', () => {
+  assert.equal(
+    detectWindowSize('claude-opus-4-7', '500000', {}, { windowTokens: 750_000 }),
+    500_000,
+  );
+});
+
+test('detectWindowSize: config.windowTokens beats auto-grow heuristic', () => {
+  // Even with usedTokens > 200k, an explicit user config wins.
+  assert.equal(
+    detectWindowSize('claude-opus-4-7', null, { usedTokens: 410_000 }, { windowTokens: 500_000 }),
+    500_000,
+  );
+});
+
+test('detectWindowSize: null/empty config falls through to existing logic', () => {
+  assert.equal(detectWindowSize('claude-opus-4-7[1m]', null, {}, null), 1_000_000);
+  assert.equal(detectWindowSize('claude-opus-4-7', null, {}, { windowTokens: null }), 200_000);
+});
+
 test('prettyModelName: prefers displayName when given', () => {
   assert.equal(prettyModelName('claude-opus-4-7[1m]', 'Opus'), 'Opus');
 });

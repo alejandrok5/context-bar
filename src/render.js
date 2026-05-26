@@ -25,19 +25,23 @@ function pickZone(pct, thresholds = DEFAULT_THRESHOLDS) {
   return { ...ZONES.dumb, key: 'dumb' };
 }
 
-// Parse CONTEXT_BART_ZONE_SMART / CONTEXT_BART_ZONE_DUMB env vars into a
-// {smart, dumb} threshold pair. Any invalid value (NaN, out of (0, 100),
-// or smart >= dumb) falls back to the defaults so the bar still renders
-// sensibly with broken config.
-function readThresholds(env) {
+// Resolve the {smart, dumb} threshold pair. Precedence per field:
+//   env var > config file > built-in default.
+// Any invalid value (NaN, out of (0, 100), or smart >= dumb) at the
+// chosen layer falls through to the next, so a broken config still
+// renders a sensible bar.
+function readThresholds(env, config = null) {
   const parse = (raw) => {
     if (raw == null || raw === '') return null;
     const n = parseFloat(raw);
     if (!Number.isFinite(n) || n <= 0 || n >= 100) return null;
     return n;
   };
-  const smart = parse(env.CONTEXT_BART_ZONE_SMART);
-  const dumb = parse(env.CONTEXT_BART_ZONE_DUMB);
+  const cfgZones = config && config.zones ? config.zones : null;
+  const smart = parse(env.CONTEXT_BART_ZONE_SMART)
+    ?? (cfgZones && cfgZones.smart != null ? cfgZones.smart : null);
+  const dumb = parse(env.CONTEXT_BART_ZONE_DUMB)
+    ?? (cfgZones && cfgZones.dumb != null ? cfgZones.dumb : null);
   const finalSmart = smart != null ? smart : DEFAULT_THRESHOLDS.smart;
   const finalDumb = dumb != null ? dumb : DEFAULT_THRESHOLDS.dumb;
   if (finalSmart >= finalDumb) return DEFAULT_THRESHOLDS;
@@ -82,13 +86,16 @@ function buildBar(pct, color, useColor, useAscii = false) {
 // isTTY is false, but ANSI codes are expected and rendered correctly.
 // Disabling color in that case would break the default experience.
 // Users who pipe into a non-ANSI consumer can opt out with NO_COLOR.
-function shouldUseColor(env) {
+function shouldUseColor(env, config = null) {
   const fc = env.FORCE_COLOR;
   if (fc != null && fc !== '') {
     return !(fc === '0' || fc === 'false');
   }
   if (env.NO_COLOR != null && env.NO_COLOR !== '') return false;
   if (env.CONTEXT_BART_NO_COLOR != null && env.CONTEXT_BART_NO_COLOR !== '') return false;
+  // Config file fallback. "auto" is the same as not setting it.
+  if (config && config.color === 'never') return false;
+  if (config && config.color === 'always') return true;
   return true;
 }
 
@@ -97,14 +104,16 @@ function shouldUseColor(env) {
 // Some terminals (older Windows cmd, minimal busybox, SSH tunnels with a
 // stripped LANG) display the Unicode block glyphs as `??` or tofu, which
 // is uglier than plain ASCII.
-function shouldUseAscii(env) {
+function shouldUseAscii(env, config = null) {
   if (env.CONTEXT_BART_ASCII != null && env.CONTEXT_BART_ASCII !== '') return true;
   const lc = (env.LC_ALL || env.LC_CTYPE || env.LANG || '');
   if (lc && !/utf-?8/i.test(lc)) return true;
+  // Config file fallback: only consulted when neither env nor locale forces ASCII.
+  if (config && config.ascii === true) return true;
   return false;
 }
 
-function render(payload, { env = process.env } = {}) {
+function render(payload, { env = process.env, config = null } = {}) {
   const {
     modelDisplayName,
     windowSize,
@@ -114,9 +123,9 @@ function render(payload, { env = process.env } = {}) {
     updateAvailable,
   } = payload;
 
-  const useColor = shouldUseColor(env);
-  const useAscii = shouldUseAscii(env);
-  const thresholds = readThresholds(env);
+  const useColor = shouldUseColor(env, config);
+  const useAscii = shouldUseAscii(env, config);
+  const thresholds = readThresholds(env, config);
   const safeWindow = windowSize > 0 ? windowSize : 200_000;
   const safeUsed = Math.max(0, usedTokens || 0);
   const pct = (safeUsed / safeWindow) * 100;

@@ -49,6 +49,14 @@ const GLYPHS = {
   ascii:   { filled: '#', empty: '-' },
 };
 
+// Look up the ANSI code for a color name, returning '' (not undefined)
+// for unknown keys so a future zone with an unmapped color renders as
+// uncolored text instead of leaking the literal string "undefined" into
+// the output.
+function ansiCode(name) {
+  return Object.prototype.hasOwnProperty.call(ANSI, name) ? ANSI[name] : '';
+}
+
 function buildBar(pct, color, useColor, useAscii = false) {
   const clamped = Math.max(0, Math.min(100, pct));
   const filled = Math.min(10, Math.round(clamped / 10));
@@ -56,7 +64,11 @@ function buildBar(pct, color, useColor, useAscii = false) {
   const filledStr = glyphs.filled.repeat(filled);
   const emptyStr = glyphs.empty.repeat(10 - filled);
   if (!useColor) return `[${filledStr}${emptyStr}]`;
-  return `[${ANSI[color]}${filledStr}${ANSI.reset}${ANSI.dim}${emptyStr}${ANSI.reset}]`;
+  const codeFilled = ansiCode(color);
+  // If the color isn't in our table, fall back to the uncolored form
+  // rather than emitting an undefined-prefixed escape sequence.
+  if (!codeFilled) return `[${filledStr}${emptyStr}]`;
+  return `[${codeFilled}${filledStr}${ANSI.reset}${ANSI.dim}${emptyStr}${ANSI.reset}]`;
 }
 
 // Color precedence:
@@ -115,8 +127,9 @@ function render(payload, { env = process.env } = {}) {
   // is in the green zone — rendering "30%" alongside green text would
   // be inconsistent. floor(29.6) = 29 keeps the label and color in sync.
   const pctStr = `${Math.floor(pct)}%`;
-  const zoneStr = useColor
-    ? `${ANSI[zone.color]}${zone.label}${ANSI.reset}`
+  const zoneCode = useColor ? ansiCode(zone.color) : '';
+  const zoneStr = zoneCode
+    ? `${zoneCode}${zone.label}${ANSI.reset}`
     : zone.label;
   const tokenStr = `${formatTokens(safeUsed)}/${formatTokens(safeWindow)}`;
   const costStr = formatCost(costUsd);

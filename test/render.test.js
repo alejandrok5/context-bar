@@ -88,6 +88,14 @@ test('buildBar: clamps overflow to 10 blocks', () => {
   assert.equal(buildBar(150, 'red', false), '[▰▰▰▰▰▰▰▰▰▰]');
 });
 
+test('buildBar: unknown color renders uncolored, never emits "undefined"', () => {
+  // A future zone with an unmapped color name (or a typo) should
+  // degrade to the no-color form, never leak the literal "undefined".
+  const out = buildBar(50, 'periwinkle', true);
+  assert.equal(out, '[▰▰▰▰▰▱▱▱▱▱]');
+  assert.doesNotMatch(out, /undefined/);
+});
+
 test('buildBar: ASCII mode uses # and - glyphs', () => {
   assert.equal(buildBar(0, 'green', false, true), '[----------]');
   assert.equal(buildBar(45, 'yellow', false, true), '[#####-----]');

@@ -111,6 +111,7 @@ function render(payload, { env = process.env } = {}) {
     usedTokens,
     costUsd,
     branch,
+    updateAvailable,
   } = payload;
 
   const useColor = shouldUseColor(env);
@@ -134,6 +135,16 @@ function render(payload, { env = process.env } = {}) {
   const tokenStr = `${formatTokens(safeUsed)}/${formatTokens(safeWindow)}`;
   const costStr = formatCost(costUsd);
 
+  // Update notifier: a dim "↑0.2.1" suffix when a newer version is
+  // cached. Glyph arrow degrades to "^" on non-UTF locales (same
+  // trigger as the bar's ASCII fallback) so it doesn't render as tofu.
+  let updateStr = null;
+  if (updateAvailable) {
+    const arrow = useAscii ? '^' : '↑';
+    const body = `${arrow}${updateAvailable}`;
+    updateStr = useColor ? `${ANSI.dim}${body}${ANSI.reset}` : body;
+  }
+
   const parts = [
     `${bar} ${pctStr}`,
     zoneStr,
@@ -141,6 +152,7 @@ function render(payload, { env = process.env } = {}) {
     tokenStr,
     branch || null,
     costStr,
+    updateStr,
   ].filter(Boolean);
 
   return parts.join(' · ');

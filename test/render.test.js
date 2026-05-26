@@ -279,3 +279,55 @@ test('render: defaults to 200k window if windowSize missing', () => {
   // 100k / 200k = 50%
   assert.match(out, /50%/);
 });
+
+test('render: updateAvailable appends ↑version suffix (no color)', () => {
+  const out = render({
+    modelDisplayName: 'Opus',
+    windowSize: 200_000,
+    usedTokens: 20_000,
+    costUsd: null,
+    branch: null,
+    updateAvailable: '0.2.1',
+  }, { env: { NO_COLOR: '1' } });
+  assert.match(out, /↑0\.2\.1$/);
+  assert.doesNotMatch(out, /\x1b\[/);
+});
+
+test('render: updateAvailable=null produces no arrow suffix', () => {
+  const out = render({
+    modelDisplayName: 'Opus',
+    windowSize: 200_000,
+    usedTokens: 20_000,
+    costUsd: null,
+    branch: null,
+    updateAvailable: null,
+  }, { env: { NO_COLOR: '1' } });
+  assert.doesNotMatch(out, /↑/);
+  assert.doesNotMatch(out, /\^[0-9]/);
+});
+
+test('render: updateAvailable suffix is wrapped in dim ANSI when color is on', () => {
+  const out = render({
+    modelDisplayName: 'Opus',
+    windowSize: 200_000,
+    usedTokens: 20_000,
+    costUsd: null,
+    branch: null,
+    updateAvailable: '0.2.1',
+  }, { env: {} });
+  // dim opens with ESC[2m and the suffix immediately follows.
+  assert.match(out, /\x1b\[2m↑0\.2\.1\x1b\[0m$/);
+});
+
+test('render: updateAvailable suffix uses ASCII caret in non-UTF locale', () => {
+  const out = render({
+    modelDisplayName: 'Opus',
+    windowSize: 200_000,
+    usedTokens: 20_000,
+    costUsd: null,
+    branch: null,
+    updateAvailable: '0.2.1',
+  }, { env: { NO_COLOR: '1', LANG: 'C' } });
+  assert.match(out, /\^0\.2\.1$/);
+  assert.doesNotMatch(out, /↑/);
+});

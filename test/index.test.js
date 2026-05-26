@@ -17,7 +17,11 @@ async function captureRun({ stdin = '{}', env = {} } = {}) {
   const orig = process.stdout.write.bind(process.stdout);
   process.stdout.write = (chunk) => { written.push(String(chunk)); return true; };
   try {
-    await run({ stdin, env: { NO_COLOR: '1', ...env } });
+    // CONTEXT_BAR_NO_UPDATE_CHECK keeps the orchestrator from touching
+    // the real user's cache dir or spawning background npm fetches
+    // during the test suite. Tests that need to exercise the notifier
+    // override it explicitly.
+    await run({ stdin, env: { NO_COLOR: '1', CONTEXT_BAR_NO_UPDATE_CHECK: '1', ...env } });
   } finally {
     process.stdout.write = orig;
   }

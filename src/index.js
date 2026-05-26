@@ -5,6 +5,14 @@ const { findLatestUsageTokens } = require('./transcript');
 const { getBranchAndWorktree } = require('./git');
 const { render } = require('./render');
 const { detectWindowSize, prettyModelName } = require('./window');
+const { readCachedUpdate, maybeKickFetch } = require('./update-check');
+
+// Read package.json once at module load. Used by the update notifier
+// to compare against the cached `latest` from the npm registry. We
+// intentionally try/catch — a corrupted install shouldn't break the bar.
+let CURRENT_VERSION = null;
+try { CURRENT_VERSION = require('../package.json').version || null; }
+catch { CURRENT_VERSION = null; }
 
 function readStdin() {
   return new Promise((resolve) => {
@@ -61,6 +69,8 @@ async function run({ env = process.env, stdin } = {}) {
   // `main@worktree_3` when we're in a linked worktree.
   const branchDisplay = branch && worktree ? `${branch}@${worktree}` : branch;
 
+  const update = readCachedUpdate({ env, currentVersion: CURRENT_VERSION });
+
   const payload = {
     modelId,
     modelDisplayName,
@@ -70,10 +80,15 @@ async function run({ env = process.env, stdin } = {}) {
     branch: branchDisplay,
     cwd: partial.cwd,
     transcriptPath: partial.transcriptPath,
+    updateAvailable: update ? update.latest : null,
   };
 
   const line = render(payload, { env });
   process.stdout.write(line + '\n');
+
+  // Kick the background refresh AFTER the bar is on the wire so even a
+  // spawn-syscall hiccup can't delay the user-visible render.
+  maybeKickFetch({ env, currentVersion: CURRENT_VERSION, scriptDir: __dirname });
 }
 
 module.exports = { run, safeParseJson, readStdin };

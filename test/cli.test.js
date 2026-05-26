@@ -18,7 +18,9 @@ function runCli(stdin, extraEnv = {}) {
   return spawnSync('node', [BIN], {
     input: stdin,
     encoding: 'utf8',
-    env: { ...process.env, NO_COLOR: '1', ...extraEnv },
+    // Opt the smoke tests out of the update notifier so we don't write
+    // to the real ~/.cache or spawn detached fetchers that hit npm.
+    env: { ...process.env, NO_COLOR: '1', CONTEXT_BAR_NO_UPDATE_CHECK: '1', ...extraEnv },
   });
 }
 

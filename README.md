@@ -67,6 +67,10 @@ Replace `/absolute/path/to/context-bar` with the output of `which context-bar` (
 
 Restart Claude Code. The bar should appear at the bottom of your terminal session.
 
+### Updates
+
+`context-bar` does a once-a-day, fire-and-forget check against the npm registry. When a newer version is available, a dim `↑0.2.1` segment is appended to the bar — that's your cue to run `npm update -g context-bar` (or `git pull` if you cloned). The check runs in a detached background process so it never delays a status-bar refresh; results are cached in `${XDG_CACHE_HOME:-~/.cache}/context-bar/latest.json` (or `%LOCALAPPDATA%\context-bar\` on Windows). Opt out entirely with `CONTEXT_BAR_NO_UPDATE_CHECK=1`.
+
 ## Configuration
 
 Most behavior is auto-detected. Use these env vars to override:
@@ -79,6 +83,7 @@ Most behavior is auto-detected. Use these env vars to override:
 | `CONTEXT_BAR_ZONE_SMART` | `30` | Smart→approaching threshold (% of window). |
 | `CONTEXT_BAR_ZONE_DUMB` | `40` | approaching→Dumb threshold (% of window). |
 | `CONTEXT_BAR_ASCII` | auto | Force ASCII glyphs (`[#####-----]`) instead of Unicode (`[▰▰▰▰▰▱▱▱▱▱]`). Auto-on when `LANG` is non-UTF-8. |
+| `CONTEXT_BAR_NO_UPDATE_CHECK` | unset | Disable the once-a-day version check that appends a dim `↑x.y.z` segment when a newer release is on npm. |
 | `CONTEXT_BAR_USED_TOKENS` | n/a | (env adapter only) Used tokens count. |
 | `CONTEXT_BAR_MODEL_ID` | n/a | (env adapter only) Model id. |
 | `CONTEXT_BAR_MODEL_NAME` | n/a | (env adapter only) Display name. |

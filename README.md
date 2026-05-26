@@ -1,5 +1,10 @@
 # Context Bar
 
+[![CI](https://github.com/alejandrok5/context-bar/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/alejandrok5/context-bar/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/context-bar.svg)](https://www.npmjs.com/package/context-bar)
+[![node](https://img.shields.io/node/v/context-bar.svg)](https://www.npmjs.com/package/context-bar)
+[![license](https://img.shields.io/npm/l/context-bar.svg)](LICENSE)
+
 > A Smart Zone / Dumb Zone context-window meter for Claude Code, OpenCode, Codex, and other AI coding agents.
 
 ![Context Bar — three zones across the session lifecycle](docs/demo.svg)

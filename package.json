@@ -1,6 +1,6 @@
 {
   "name": "context-bar",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Smart Zone / Dumb Zone context-window meter for Claude Code, OpenCode, Codex, and other AI coding agents",
   "bin": {
     "context-bar": "bin/context-bar.js"

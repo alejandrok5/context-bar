@@ -2,6 +2,19 @@
 
 const DEFAULT_WINDOW = 200_000;
 const ONE_MILLION = 1_000_000;
+const TWO_MILLION = 2_000_000;
+
+// Map a model id to the larger-than-200k context window its family is
+// known to support. Defaults to 1M — that's the current ceiling for the
+// hosts we adapt to, and falling back to 1M when we don't recognize the
+// family is safer than guessing higher. Add explicit branches here when
+// new tiers ship.
+function largeWindowForFamily(modelId) {
+  if (typeof modelId !== 'string') return ONE_MILLION;
+  // Reserved branch: if/when a 2M-tier id pattern is known, return TWO_MILLION here.
+  // e.g. if (/\[2m\]/i.test(modelId)) return TWO_MILLION;
+  return ONE_MILLION;
+}
 
 function detectWindowSize(modelId, envOverride, signals = {}) {
   // Highest priority: explicit env override.
@@ -15,9 +28,9 @@ function detectWindowSize(modelId, envOverride, signals = {}) {
   // Strong runtime signal: host told us we've exceeded 200k tokens,
   // OR we observed usage above 200k in the transcript. Either way,
   // we're not on a 200k-window model.
-  if (exceeds200k === true) return ONE_MILLION;
+  if (exceeds200k === true) return largeWindowForFamily(modelId);
   if (typeof usedTokens === 'number' && usedTokens > DEFAULT_WINDOW) {
-    return ONE_MILLION;
+    return largeWindowForFamily(modelId);
   }
 
   // Static signal: model id explicitly carries the [1m] suffix
@@ -60,4 +73,4 @@ function matchVersion(s, family) {
   return family;
 }
 
-module.exports = { detectWindowSize, prettyModelName, DEFAULT_WINDOW, ONE_MILLION };
+module.exports = { detectWindowSize, prettyModelName, largeWindowForFamily, DEFAULT_WINDOW, ONE_MILLION, TWO_MILLION };

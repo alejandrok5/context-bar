@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 200" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">
+  <rect width="100%" height="100%" rx="8" fill="#0d1117"/>
+  <text x="20" y="30" fill="#6e7681" font-size="12">$ # Smart Zone — model is reasoning clearly</text>
+  <text x="20" y="60" fill="#c9d1d9">
+    <tspan fill="#3fb950">[▰▰▱▱▱▱▱▱▱▱]</tspan>
+    <tspan fill="#c9d1d9"> 18% · </tspan>
+    <tspan fill="#3fb950">Smart Zone</tspan>
+    <tspan fill="#c9d1d9"> · Opus 4.7 · 184k/1M · main · $0.21</tspan>
+  </text>
+
+  <text x="20" y="100" fill="#6e7681" font-size="12">$ # Approaching the cliff — consider /compact soon</text>
+  <text x="20" y="130" fill="#c9d1d9">
+    <tspan fill="#d29922">[▰▰▰▱▱▱▱▱▱▱]</tspan>
+    <tspan fill="#c9d1d9"> 35% · </tspan>
+    <tspan fill="#d29922">Smart Zone</tspan>
+    <tspan fill="#c9d1d9"> · Opus 4.7 · 350k/1M · feat-x@worktree_3 · $0.42</tspan>
+  </text>
+
+  <text x="20" y="170" fill="#6e7681" font-size="12">$ # Dumb Zone — quality is degrading, start fresh</text>
+  <text x="20" y="195" fill="#c9d1d9">
+    <tspan fill="#f85149">[▰▰▰▰▱▱▱▱▱▱]</tspan>
+    <tspan fill="#c9d1d9"> 41% · </tspan>
+    <tspan fill="#f85149">Dumb Zone</tspan>
+    <tspan fill="#c9d1d9"> · Opus 4.7 · 412k/1M · main · $0.42</tspan>
+  </text>
+</svg>

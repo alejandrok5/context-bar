@@ -7,32 +7,29 @@
 
 > A Smart Zone / Dumb Zone context-window meter for Claude Code, OpenCode, Codex, and other AI coding agents.
 
-![Context Bart — three zones across the session lifecycle](docs/demo.svg)
+![Context Bart, three zones across the session lifecycle](docs/demo.svg)
 
-```
-[▰▰▰▰▱▱▱▱▱▱] 42% · Dumb Zone · Opus 4.7 · 412k/1M · main · $0.42
-```
 
-When you're talking to a long-context model, the first ~30% of the window is the **Smart Zone** — the model reasons reliably, follows instructions, and doesn't hallucinate. Push past ~40% and you enter the **Dumb Zone**: attention fragments, instructions get dropped, and "lost-in-the-middle" failures climb. `context-bart` puts that threshold front-and-center in your terminal so you know when to `/compact` or start a fresh session before quality degrades.
+When you're talking to a long-context model, the first ~30% of the window is the **Smart Zone**, the model reasons reliably, follows instructions, and doesn't hallucinate. Push past ~40% and you enter the **Dumb Zone**: attention fragments, instructions get dropped, and "lost-in-the-middle" failures climb. `context-bart` puts that threshold front-and-center in your terminal so you know when to `/compact` or start a fresh session before quality degrades.
 
 ## Features
 
-- **Single-line meter** with a 10-segment progress bar, percentage, and zone label.
-- **Color tiers** — green (0–29%), yellow (30–39%), red (40%+). Honors `NO_COLOR`.
-- **Multi-host** — adapters for Claude Code, OpenCode, Codex, and a generic env-var fallback.
-- **Zero dependencies** — pure Node.js stdlib (`fs`, `child_process`). Node 18+.
-- **Auto window detection** — 1M when the model id is tagged `[1m]`, the host sets `exceeds_200k_tokens`, or observed usage tops 200k; 200k otherwise. Overridable via `CONTEXT_BART_WINDOW_TOKENS`.
-- **Extras** — model name, raw tokens, git branch (annotated with worktree name when you're in a linked worktree, e.g. `feat-x@worktree_3`), session cost.
-- **Crash-safe** — any unexpected input degrades to a fallback line instead of breaking your status bar.
+- **Single-line meter**: with a 10-segment progress bar, percentage, and zone label.
+- **Color tiers**: green (0–29%), yellow (30–39%), red (40%+). Honors `NO_COLOR`.
+- **Multi-host**: adapters for Claude Code, OpenCode, Codex, and a generic env-var fallback.
+- **Zero dependencies**: pure Node.js stdlib (`fs`, `child_process`). Node 18+.
+- **Auto window detection**: 1M when the model id is tagged `[1m]`, the host sets `exceeds_200k_tokens`, or observed usage tops 200k; 200k otherwise. Overridable via `CONTEXT_BART_WINDOW_TOKENS`.
+- **Extras**: model name, raw tokens, git branch (annotated with worktree name when you're in a linked worktree, e.g. `feat-x@worktree_3`), session cost.
+- **Crash-safe**: any unexpected input degrades to a fallback line instead of breaking your status bar.
 
 ## Why not just write my own?
 
-The [Claude Code statusline docs](https://code.claude.com/docs/en/statusline) hand you the contract — a JSON payload on stdin, your script's stdout becomes the bar — plus a few minimal examples. `context-bart` is what you'd end up writing if you sat down to ship a good one. The non-obvious things it solves:
+The [Claude Code statusline docs](https://code.claude.com/docs/en/statusline) hand you the contract, a JSON payload on stdin, your script's stdout becomes the bar, plus a few minimal examples. `context-bart` is what you'd end up writing if you sat down to ship a good one. The non-obvious things it solves:
 
 - **The transcript walk.** Sum `input_tokens + cache_creation_input_tokens + cache_read_input_tokens` from the latest assistant turn, stopping at `compact_boundary` markers so the bar visibly drops after `/compact`. The docs examples don't compute used context at all.
-- **Window detection.** Claude Code reports `model.id: "claude-opus-4-7"` for 1M-tier sessions — the `[1m]` suffix isn't always there. `context-bart` reads `exceeds_200k_tokens` and auto-grows when observed usage tops 200k, so you never see `205% · 410k/200k`.
+- **Window detection.** Claude Code reports `model.id: "claude-opus-4-7"` for 1M-tier sessions, the `[1m]` suffix isn't always there. `context-bart` reads `exceeds_200k_tokens` and auto-grows when observed usage tops 200k, so you never see `205% · 410k/200k`.
 - **A defensible threshold.** Green / yellow / red at 30 / 40 % comes from the [lost-in-the-middle research](https://arxiv.org/abs/2307.03172), not picked from a hat.
-- **Speed.** ~40 ms cold, zero deps. Shell-pipe statuslines that fan out to `git`, `jq`, and `node` land at 200–400 ms — noticeable every refresh.
+- **Speed.** ~40 ms cold, zero deps. Shell-pipe statuslines that fan out to `git`, `jq`, and `node` land at 200–400 ms, noticeable every refresh.
 - **Portability.** OpenCode and Codex send different payloads; switch tools, the bar follows.
 
 If you want a multi-line bar, embedded `gh` / weather / etc., or anything that isn't a context meter, the docs page is your starting point. `context-bart` is purpose-built for the "am I about to enter the Dumb Zone?" question.
@@ -51,7 +48,7 @@ npm install -g context-bart
 git clone https://github.com/alejandrok5/context-bart.git ~/context-bart
 ```
 
-The npm install puts a `context-bart` binary on your `$PATH`. Find its absolute path with `which context-bart` (or `where context-bart` on Windows) — you'll need it for the host config below, because some hosts (notably Claude Code's `statusLine`) launch commands without inheriting your shell's `PATH`.
+The npm install puts a `context-bart` binary on your `$PATH`. Find its absolute path with `which context-bart` (or `where context-bart` on Windows), you'll need it for the host config below, because some hosts (notably Claude Code's `statusLine`) launch commands without inheriting your shell's `PATH`.
 
 The git-clone path requires no `npm install` and no build step. The script in `bin/context-bart.js` is ready to run.
 
@@ -81,7 +78,7 @@ Restart Claude Code. The bar should appear at the bottom of your terminal sessio
 
 ### Updates
 
-`context-bart` does a once-a-day, fire-and-forget check against the npm registry. When a newer version is available, a dim `↑0.2.1` segment is appended to the bar — that's your cue to run `npm update -g context-bart` (or `git pull` if you cloned). The check runs in a detached background process so it never delays a status-bar refresh; results are cached in `${XDG_CACHE_HOME:-~/.cache}/context-bart/latest.json` (or `%LOCALAPPDATA%\context-bart\` on Windows). Opt out entirely with `CONTEXT_BART_NO_UPDATE_CHECK=1`.
+`context-bart` does a once-a-day, fire-and-forget check against the npm registry. When a newer version is available, a dim `↑0.2.1` segment is appended to the bar, that's your cue to run `npm update -g context-bart` (or `git pull` if you cloned). The check runs in a detached background process so it never delays a status-bar refresh; results are cached in `${XDG_CACHE_HOME:-~/.cache}/context-bart/latest.json` (or `%LOCALAPPDATA%\context-bart\` on Windows). Opt out entirely with `CONTEXT_BART_NO_UPDATE_CHECK=1`.
 
 ## Configuration
 

@@ -32,3 +32,12 @@ jobs:
 
       - name: Smoke test (empty stdin)
         run: echo '{}' | node bin/context-bar.js
+
+      - name: Verify publish manifest (no test/ or .github/ leak)
+        run: |
+          output=$(npm pack --dry-run --json)
+          echo "$output"
+          if echo "$output" | grep -E '"path":\s*"(test|\.github|eslint\.config|test/|\.github/)' ; then
+            echo "::error::Publish manifest contains files that should not ship." >&2
+            exit 1
+          fi

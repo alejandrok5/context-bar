@@ -1,11 +1,15 @@
 'use strict';
 
+// End-to-end smoke tests. Pure orchestrator / formatter logic now lives
+// in test/index.test.js, render.test.js, etc. — the cases here only
+// guard the boundary the harness sees: process exit code, that the
+// shebang and arg-less invocation work, and that hard errors don't
+// take the bar down.
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
-const fs = require('fs');
 const { spawnSync } = require('child_process');
-const { tmpDir } = require('./_helpers');
 
 const BIN = path.join(__dirname, '..', 'bin', 'context-bar.js');
 const FIXTURE = path.join(__dirname, 'fixtures', 'claude-usage.jsonl');
@@ -18,20 +22,14 @@ function runCli(stdin, extraEnv = {}) {
   });
 }
 
-test('cli: empty stdin → falls back to env adapter, exits 0', () => {
+test('cli smoke: empty stdin → falls back to env adapter, exits 0', () => {
   const res = runCli('');
   assert.equal(res.status, 0);
   assert.ok(res.stdout.length > 0, 'should print something');
   assert.match(res.stdout, /\d+%/);
 });
 
-test('cli: empty JSON object → exits 0 with fallback output', () => {
-  const res = runCli('{}');
-  assert.equal(res.status, 0);
-  assert.match(res.stdout, /\d+%/);
-});
-
-test('cli: realistic Claude Code payload renders bar + zone', () => {
+test('cli smoke: realistic Claude payload renders the full bar', () => {
   const payload = JSON.stringify({
     session_id: 'test',
     transcript_path: FIXTURE,
@@ -48,136 +46,8 @@ test('cli: realistic Claude Code payload renders bar + zone', () => {
   assert.match(res.stdout, /\$0\.42/);
 });
 
-test('cli: NO_COLOR strips ANSI codes', () => {
-  const payload = JSON.stringify({
-    transcript_path: FIXTURE,
-    model: { id: 'claude-opus-4-7[1m]' },
-  });
-  const res = runCli(payload, { NO_COLOR: '1' });
-  assert.equal(res.status, 0);
-  assert.doesNotMatch(res.stdout, /\x1b\[/);
-});
-
-test('cli: garbage stdin does not crash', () => {
+test('cli smoke: garbage stdin does not crash', () => {
   const res = runCli('this is not json at all !!!');
   assert.equal(res.status, 0);
   assert.match(res.stdout, /\d+%/);
-});
-
-test('cli: missing transcript path still exits 0', () => {
-  const payload = JSON.stringify({
-    transcript_path: '/no/such/path.jsonl',
-    model: { id: 'claude-opus-4-7[1m]' },
-  });
-  const res = runCli(payload);
-  assert.equal(res.status, 0);
-  assert.match(res.stdout, /0%/);
-  assert.match(res.stdout, /Smart Zone/);
-});
-
-test('cli: model id without [1m] but usage >200k auto-detects 1M window', () => {
-  // Regression: real Claude Code transcripts have model="claude-opus-4-7"
-  // (no [1m] suffix) even on the 1M-context tier. usedTokens > 200k must
-  // bump the window to 1M, not produce a >100% reading.
-  const tmp = tmpDir('cb-cli-');
-  const transcript = path.join(tmp, 't.jsonl');
-  fs.writeFileSync(transcript,
-    '{"type":"assistant","message":{"usage":{"input_tokens":100,"cache_creation_input_tokens":1000,"cache_read_input_tokens":410000}}}\n'
-  );
-  const payload = JSON.stringify({
-    transcript_path: transcript,
-    model: { id: 'claude-opus-4-7', display_name: 'Opus 4.7' },
-  });
-  const res = runCli(payload);
-  assert.equal(res.status, 0);
-  // 411,100 / 1,000,000 = 41% (Dumb Zone). Must NOT be >100%.
-  assert.match(res.stdout, /41%/);
-  assert.match(res.stdout, /411k\/1M/);
-  assert.doesNotMatch(res.stdout, /\b1\d\d%/);  // no >=100% reading
-  assert.doesNotMatch(res.stdout, /\b2\d\d%/);
-});
-
-test('cli: /compact boundary resets the bar even if pre-compact usage exists', () => {
-  // Regression: pre-compact transcripts had usage blocks before /compact;
-  // the bar must NOT report those stale numbers after /compact.
-  const tmp = tmpDir('cb-compact-');
-  const transcript = path.join(tmp, 't.jsonl');
-  fs.writeFileSync(transcript, [
-    '{"type":"assistant","message":{"usage":{"input_tokens":250,"cache_creation_input_tokens":1500,"cache_read_input_tokens":410000}}}',
-    '{"type":"system","subtype":"compact_boundary","compactMetadata":{"trigger":"manual","preTokens":68327}}',
-    '{"type":"user","message":{"content":"next"}}',
-  ].join('\n') + '\n');
-  const payload = JSON.stringify({
-    transcript_path: transcript,
-    model: { id: 'claude-opus-4-7', display_name: 'Opus' },
-  });
-  const res = runCli(payload);
-  assert.equal(res.status, 0);
-  // Bar must read 0% (or near-zero), NOT the pre-compact 411k value.
-  assert.match(res.stdout, /\b0%/);
-  assert.match(res.stdout, /Smart Zone/);
-  assert.doesNotMatch(res.stdout, /4\d\dk\//);  // no 411k or similar
-});
-
-test('cli: linked worktree shown as branch@worktree', () => {
-  const cp = require('child_process');
-  const main = tmpDir('cb-cli-main-');
-  cp.execSync('git init -q -b main', { cwd: main });
-  cp.execSync('git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init', { cwd: main });
-  const wt = path.join(path.dirname(main), `wt-${path.basename(main)}-feat`);
-  cp.execSync(`git worktree add -q -b feat-branch "${wt}"`, { cwd: main });
-
-  const payload = JSON.stringify({
-    transcript_path: '/no/such/path.jsonl',
-    cwd: wt,
-    model: { id: 'claude-opus-4-7', display_name: 'Opus' },
-  });
-  const res = runCli(payload);
-  assert.equal(res.status, 0);
-  // Should show `feat-branch@<wt-basename>`
-  const wtName = path.basename(wt);
-  assert.match(res.stdout, new RegExp(`feat-branch@${wtName.replace(/[.+*?^$()[\]{}|\\]/g, '\\$&')}`));
-});
-
-test('cli: main checkout shows only branch (no @worktree suffix)', () => {
-  const cp = require('child_process');
-  const main = tmpDir('cb-cli-solo-');
-  cp.execSync('git init -q -b solo', { cwd: main });
-  cp.execSync('git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init', { cwd: main });
-
-  const payload = JSON.stringify({
-    transcript_path: '/no/such/path.jsonl',
-    cwd: main,
-    model: { id: 'claude-opus-4-7', display_name: 'Opus' },
-  });
-  const res = runCli(payload);
-  assert.equal(res.status, 0);
-  assert.match(res.stdout, /\bsolo\b/);
-  assert.doesNotMatch(res.stdout, /solo@/);
-});
-
-test('cli: exceeds_200k_tokens flag forces 1M window even with small usage', () => {
-  const payload = JSON.stringify({
-    transcript_path: '/no/such/path.jsonl',
-    model: { id: 'claude-opus-4-7' },
-    exceeds_200k_tokens: true,
-  });
-  const res = runCli(payload);
-  assert.equal(res.status, 0);
-  assert.match(res.stdout, /\/1M/);
-});
-
-test('cli: env adapter with CONTEXT_BAR_* vars produces meter', () => {
-  const res = runCli('', {
-    CONTEXT_BAR_USED_TOKENS: '120000',
-    CONTEXT_BAR_WINDOW_TOKENS: '200000',
-    CONTEXT_BAR_MODEL_NAME: 'Custom',
-    CONTEXT_BAR_COST_USD: '0.99',
-  });
-  assert.equal(res.status, 0);
-  // 120k/200k = 60% → Dumb Zone
-  assert.match(res.stdout, /60%/);
-  assert.match(res.stdout, /Dumb Zone/);
-  assert.match(res.stdout, /Custom/);
-  assert.match(res.stdout, /\$0\.99/);
 });

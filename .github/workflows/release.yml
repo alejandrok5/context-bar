@@ -44,7 +44,22 @@ jobs:
             exit 1
           fi
 
+      # Skip the publish step if this exact version is already on the
+      # registry. Lets us safely re-run the workflow (e.g. after a manual
+      # publish, or a retried tag push) without tripping E409.
+      - name: Check if version is already published
+        id: already_published
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if npm view "context-bart@${version}" version >/dev/null 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "context-bart@${version} is already on npm — skipping publish."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm with provenance
+        if: steps.already_published.outputs.skip == 'false'
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,0 +1,50 @@
+name: Release
+
+# Publishes to npm when a v* tag is pushed. Requires:
+#   - Repo secret NPM_TOKEN  (npm automation token with publish rights)
+#   - The tag's commit must match a passing CI run.
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      # id-token: write enables npm publish --provenance, which signs
+      # the package via Sigstore so consumers can verify it really came
+      # from this repo at this commit.
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dev dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Verify tag matches package.json version
+        run: |
+          tag="${GITHUB_REF##refs/tags/}"
+          pkg="v$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::Tag $tag does not match package.json version $pkg"
+            exit 1
+          fi
+
+      - name: Publish to npm with provenance
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

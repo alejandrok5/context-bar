@@ -3,7 +3,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
+const fs = require('fs');
 const { spawnSync } = require('child_process');
+const { tmpDir } = require('./_helpers');
 
 const BIN = path.join(__dirname, '..', 'bin', 'context-bar.js');
 const FIXTURE = path.join(__dirname, 'fixtures', 'claude-usage.jsonl');
@@ -77,10 +79,7 @@ test('cli: model id without [1m] but usage >200k auto-detects 1M window', () => 
   // Regression: real Claude Code transcripts have model="claude-opus-4-7"
   // (no [1m] suffix) even on the 1M-context tier. usedTokens > 200k must
   // bump the window to 1M, not produce a >100% reading.
-  const path = require('path');
-  const fs = require('fs');
-  const os = require('os');
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-cli-'));
+  const tmp = tmpDir('cb-cli-');
   const transcript = path.join(tmp, 't.jsonl');
   fs.writeFileSync(transcript,
     '{"type":"assistant","message":{"usage":{"input_tokens":100,"cache_creation_input_tokens":1000,"cache_read_input_tokens":410000}}}\n'
@@ -101,9 +100,7 @@ test('cli: model id without [1m] but usage >200k auto-detects 1M window', () => 
 test('cli: /compact boundary resets the bar even if pre-compact usage exists', () => {
   // Regression: pre-compact transcripts had usage blocks before /compact;
   // the bar must NOT report those stale numbers after /compact.
-  const fs = require('fs');
-  const os = require('os');
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-compact-'));
+  const tmp = tmpDir('cb-compact-');
   const transcript = path.join(tmp, 't.jsonl');
   fs.writeFileSync(transcript, [
     '{"type":"assistant","message":{"usage":{"input_tokens":250,"cache_creation_input_tokens":1500,"cache_read_input_tokens":410000}}}',
@@ -123,10 +120,8 @@ test('cli: /compact boundary resets the bar even if pre-compact usage exists', (
 });
 
 test('cli: linked worktree shown as branch@worktree', () => {
-  const fs = require('fs');
-  const os = require('os');
   const cp = require('child_process');
-  const main = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-cli-main-'));
+  const main = tmpDir('cb-cli-main-');
   cp.execSync('git init -q -b main', { cwd: main });
   cp.execSync('git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init', { cwd: main });
   const wt = path.join(path.dirname(main), `wt-${path.basename(main)}-feat`);
@@ -145,10 +140,8 @@ test('cli: linked worktree shown as branch@worktree', () => {
 });
 
 test('cli: main checkout shows only branch (no @worktree suffix)', () => {
-  const fs = require('fs');
-  const os = require('os');
   const cp = require('child_process');
-  const main = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-cli-solo-'));
+  const main = tmpDir('cb-cli-solo-');
   cp.execSync('git init -q -b solo', { cwd: main });
   cp.execSync('git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init', { cwd: main });
 

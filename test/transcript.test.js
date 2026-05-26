@@ -4,8 +4,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 const { findLatestUsageTokens, sumUsage } = require('../src/transcript');
+const { tmpDir } = require('./_helpers');
 
 const FIXTURES = path.join(__dirname, 'fixtures');
 
@@ -34,8 +34,8 @@ test('findLatestUsageTokens: returns most recent assistant usage', () => {
 
 test('findLatestUsageTokens: walks back over lines without usage', () => {
   // Write a tmp file where the last line lacks usage but an earlier line has it.
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-test-'));
-  const p = path.join(tmpDir, 'transcript.jsonl');
+  const dir = tmpDir('cb-test-');
+  const p = path.join(dir, 'transcript.jsonl');
   const lines = [
     '{"type":"user","message":{"role":"user","content":"a"}}',
     '{"type":"assistant","message":{"usage":{"input_tokens":100,"cache_read_input_tokens":900}}}',
@@ -53,8 +53,8 @@ test('findLatestUsageTokens: skips malformed JSON lines', () => {
 });
 
 test('findLatestUsageTokens: empty file returns null (no reading available)', () => {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-test-'));
-  const p = path.join(tmpDir, 'empty.jsonl');
+  const dir = tmpDir('cb-test-');
+  const p = path.join(dir, 'empty.jsonl');
   fs.writeFileSync(p, '');
   assert.equal(findLatestUsageTokens(p), null);
 });
@@ -93,8 +93,8 @@ test('findLatestUsageTokens: finds usage in the tail of a >256KB transcript', ()
   // Reproduce the perf-relevant case: a big file where only the LAST line
   // has a real usage block. Pad with junk lines to push the file past the
   // tail-read threshold, then make sure we still find the recent usage.
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-test-big-'));
-  const p = path.join(tmpDir, 'big.jsonl');
+  const dir = tmpDir('cb-test-big-');
+  const p = path.join(dir, 'big.jsonl');
   const padLine = JSON.stringify({ type: 'user', message: { content: 'x'.repeat(500) } });
   const lines = [];
   // ~500 bytes/line × 1000 lines = ~500KB of padding
@@ -108,8 +108,8 @@ test('findLatestUsageTokens: finds usage in the tail of a >256KB transcript', ()
 test('findLatestUsageTokens: falls back to full read when tail has no usage', () => {
   // Tail is all user padding; the only usage block lives BEFORE the tail
   // window. We must still find it via the fallback full-file read.
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-test-fallback-'));
-  const p = path.join(tmpDir, 'fallback.jsonl');
+  const dir = tmpDir('cb-test-fallback-');
+  const p = path.join(dir, 'fallback.jsonl');
   const padLine = JSON.stringify({ type: 'user', message: { content: 'y'.repeat(500) } });
   const head = ['{"type":"assistant","message":{"usage":{"input_tokens":1,"cache_read_input_tokens":4242}}}'];
   for (let i = 0; i < 1000; i++) head.push(padLine);
@@ -120,10 +120,8 @@ test('findLatestUsageTokens: falls back to full read when tail has no usage', ()
 
 test('findLatestUsageTokens: stops at most-recent compact boundary, ignoring earlier ones', () => {
   // Two compactions: oldest usage 500k, then compact, then 200k, then compact, no usage after.
-  const fs = require('fs');
-  const os = require('os');
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-test-'));
-  const p = path.join(tmpDir, 'multi-compact.jsonl');
+  const dir = tmpDir('cb-test-');
+  const p = path.join(dir, 'multi-compact.jsonl');
   fs.writeFileSync(p, [
     '{"type":"assistant","message":{"usage":{"input_tokens":1,"cache_read_input_tokens":499999}}}',
     '{"type":"system","subtype":"compact_boundary","compactMetadata":{"trigger":"manual"}}',

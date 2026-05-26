@@ -2,14 +2,13 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
 const { getBranch, getBranchAndWorktree } = require('../src/git');
+const { tmpDir } = require('./_helpers');
 
 function tmpRepo() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-git-'));
+  const dir = tmpDir('cb-git-');
   execSync('git init -q -b test-branch', { cwd: dir });
   // Create an empty commit so HEAD resolves to a branch name.
   execSync('git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init', { cwd: dir });
@@ -22,7 +21,7 @@ test('getBranch: returns current branch in a repo', () => {
 });
 
 test('getBranch: returns null outside a repo', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-nogit-'));
+  const dir = tmpDir('cb-nogit-');
   assert.equal(getBranch(dir), null);
 });
 
@@ -61,7 +60,7 @@ test('getBranchAndWorktree: linked worktree reports its directory name', () => {
 });
 
 test('getBranchAndWorktree: non-repo returns both null', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cb-nogit-'));
+  const dir = tmpDir('cb-nogit-');
   assert.deepEqual(getBranchAndWorktree(dir), { branch: null, worktree: null });
 });
 

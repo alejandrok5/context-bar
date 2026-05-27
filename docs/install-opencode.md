@@ -4,13 +4,23 @@
 
 > **Heads up**: OpenCode's statusline contract is still evolving. The adapter reads several likely field names defensively. If your version doesn't match, fall back to the env adapter (see below).
 
-## 1. Clone the repo
+## One-liner
+
+```bash
+npx context-bart install opencode
+```
+
+The installer prefers an existing `~/.opencode/config.json` if you have one; otherwise it writes the XDG path (`~/.config/opencode/config.json`). It merges a `statusline` block in place, backs up the previous file to `.bak`, and warns if a `status_line` or `statusBar` key from a different OpenCode version is already present (in which case rename `statusline` to whichever your version expects).
+
+Pass `--dry-run` to print the proposed file without writing.
+
+Then restart OpenCode — the bar should appear in your status area.
+
+## Manual setup
 
 ```bash
 git clone https://github.com/alejandrok5/context-bart.git ~/context-bart
 ```
-
-## 2. Wire it into OpenCode
 
 Add to your OpenCode config (path varies by version — check `opencode --help` or your docs):
 
@@ -24,9 +34,7 @@ Add to your OpenCode config (path varies by version — check `opencode --help` 
 
 If your OpenCode version uses a different key (`status_line`, `statusBar`, etc.), use that — the script reads stdin regardless.
 
-## 3. Restart OpenCode
-
-The bar should appear in your status area.
+Restart OpenCode.
 
 ## Fallback: env-adapter mode
 

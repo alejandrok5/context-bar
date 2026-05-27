@@ -36,45 +36,40 @@ If you want a multi-line bar, embedded `gh` / weather / etc., or anything that i
 
 ## Install
 
-Pick one:
+One line per host:
 
 ```bash
-# npm (recommended for most users)
+# Claude Code
+npx context-bart install claude
+
+# OpenCode
+npx context-bart install opencode
+
+# Codex (prints the wire-up block — Codex has no central config to patch)
+npx context-bart install codex
+```
+
+Each `install` subcommand resolves an absolute command path, merges a `statusLine` (or `statusline`) block into the host's config file, and backs up the previous file to `.bak`. It's idempotent — re-running it overwrites only the bart-managed key, leaving every other setting intact. Pass `--dry-run` to preview the change without writing.
+
+Prefer to install the binary first? Either path works — `install <host>` records whichever invocation it was launched with:
+
+```bash
+# npm install (puts `context-bart` on your $PATH)
 npm install -g context-bart
-```
+context-bart install claude
 
-```bash
-# git clone (if you want to pin to a commit or hack on the source)
+# git clone (no build step; bin/context-bart.js runs as-is)
 git clone https://github.com/alejandrok5/context-bart.git ~/context-bart
+node ~/context-bart/bin/context-bart.js install claude
 ```
 
-The npm install puts a `context-bart` binary on your `$PATH`. Find its absolute path with `which context-bart` (or `where context-bart` on Windows), you'll need it for the host config below, because some hosts (notably Claude Code's `statusLine`) launch commands without inheriting your shell's `PATH`.
-
-The git-clone path requires no `npm install` and no build step. The script in `bin/context-bart.js` is ready to run.
-
-Then wire it into your tool of choice:
+For the manual JSON snippets, the env-fallback mode, or troubleshooting, see the per-host docs:
 
 - **[Claude Code](docs/install-claude-code.md)**
 - **[OpenCode](docs/install-opencode.md)**
 - **[Codex / generic](docs/install-codex.md)**
 
-### Quick wire-up (Claude Code)
-
-Add to `~/.claude/settings.json`:
-
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "/absolute/path/to/context-bart",
-    "padding": 1
-  }
-}
-```
-
-Replace `/absolute/path/to/context-bart` with the output of `which context-bart` (npm install) or `node /absolute/path/to/context-bart/bin/context-bart.js` (git clone).
-
-Restart Claude Code. The bar should appear at the bottom of your terminal session.
+After running the installer, restart your host so it picks up the new statusline config.
 
 ### Updates
 

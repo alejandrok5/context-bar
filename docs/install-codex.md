@@ -5,6 +5,14 @@ The [Codex CLI](https://github.com/openai/codex) does not (yet) have a stable, d
 1. A **best-effort Codex adapter** that reads either an `OPENAI_*`/`CODEX_*`-prefixed env var or a nested `codex` payload on stdin.
 2. A **generic env-adapter** that any host can drive by setting `CONTEXT_BART_*` env vars.
 
+## One-liner
+
+```bash
+npx context-bart install codex
+```
+
+There's no central Codex config file to patch, so this command doesn't write anywhere — it prints a ready-to-paste wire-up block with the absolute `context-bart` command and the four `CODEX_*` env vars the adapter reads. Drop it into whichever Codex setting drives your statusline.
+
 ## Generic setup (works for any host)
 
 The env adapter is the universal escape hatch. Configure your host to:

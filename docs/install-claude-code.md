@@ -2,24 +2,34 @@
 
 Claude Code reads a `statusLine` block from `~/.claude/settings.json`.
 
-## 1. Install context-bart
+## One-liner
 
-Either:
+```bash
+npx context-bart install claude
+```
+
+This resolves an absolute path to the `context-bart` command, merges a `statusLine` block into `~/.claude/settings.json`, and backs up the previous file to `~/.claude/settings.json.bak`. Other top-level keys (`permissions`, `enabledPlugins`, etc.) are preserved. Re-running is a no-op against the new content.
+
+Pass `--dry-run` to print the proposed file contents without writing anything.
+
+Then restart Claude Code (quit and relaunch the CLI / desktop / IDE extension). The bar should appear at the bottom of the terminal/UI.
+
+## Manual setup
+
+If you'd rather hand-edit, install context-bart yourself:
 
 ```bash
 npm install -g context-bart
 which context-bart    # note the path it prints
 ```
 
-Or:
+or
 
 ```bash
 git clone https://github.com/alejandrok5/context-bart.git ~/context-bart
 ```
 
-## 2. Edit `~/.claude/settings.json`
-
-Add the `statusLine` block at the top level. Pick the form that matches how you installed:
+Then add the `statusLine` block at the top level of `~/.claude/settings.json`. Pick the form that matches how you installed:
 
 ```json
 {
@@ -47,9 +57,7 @@ Use an **absolute path** — Claude Code does not expand `~` and runs the comman
 
 If you already have other top-level keys (`permissions`, `enabledPlugins`, etc.), just add `statusLine` alongside them.
 
-## 3. Restart Claude Code
-
-Quit and relaunch the CLI / desktop / IDE extension. The bar should appear at the bottom of the terminal/UI.
+Restart Claude Code to pick up the change.
 
 ## What Claude Code passes to the script
 

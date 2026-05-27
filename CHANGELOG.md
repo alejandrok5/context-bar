@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-26
+
+### Added
+- `context-bart install <claude|opencode|codex>` subcommand. Collapses
+  the two-step install (npm/git + hand-edit JSON) into a single command
+  per host. The installer resolves an absolute command path, merges a
+  `statusLine`/`statusline` block into the host's config file, and
+  backs up the previous file to `.bak`. Other top-level keys are
+  preserved; re-running against the new content is a no-op. Refuses to
+  overwrite a file that isn't valid JSON. Pass `--dry-run` to preview
+  without writing. The Codex variant doesn't write to disk (Codex has
+  no central config to patch) — it prints a ready-to-paste wire-up
+  block with the absolute command and the `CODEX_*` env vars the
+  adapter reads. Zero new runtime dependencies.
+
 ## [0.2.0] - 2026-05-26
 
 ### Added

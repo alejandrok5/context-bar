@@ -1,5 +1,4 @@
 # Context Bart
-
 [![CI](https://github.com/alejandrok5/context-bart/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/alejandrok5/context-bart/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/context-bart.svg)](https://www.npmjs.com/package/context-bart)
 [![node](https://img.shields.io/node/v/context-bart.svg)](https://www.npmjs.com/package/context-bart)
@@ -173,3 +172,7 @@ the release process.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+
+----
+[![bart](https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZHBjbWFvMTYxamJidHZnZWF5d2V6Z2k0cmQzbDNlZjBnYTB5MjBkaiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xT5LMItTmALdTn0Hx6/giphy.gif)]
